@@ -1,6 +1,5 @@
 <?php
 
-
 namespace B24;
 
 class B24Struct {

@@ -23,8 +23,26 @@ defined( 'ABSPATH' ) || exit;
 
 class B24Plugin {
 
+    function __construct() {
+
+        add_action('admin_menu', 'b24_add_page');
+        add_action('woocommerce_order_status_completed', 'b24_createLeadWhenCompleted'); // Хук статуса заказа = "Выполнен"
+
+        // Include the main WooCommerce class.
+//        if ( ! class_exists( 'WooCommerce', false ) ) {
+//            include_once dirname( __FILE__ ) . '/includes/class-woocommerce.php';
+//        }
+
+        //add_action( 'init', array( $this, 'custom_post_type'));
+
+
+
+        //$B24 = new \B24\B24Connector();
+
+    }
+
     function activate() {
-        echo "Activated";
+
     }
 
     function deactivate () {
@@ -32,6 +50,12 @@ class B24Plugin {
     }
 
     function uninstall () {
+
+    }
+
+    function custom_post_type () {
+
+        //register_post_type('b24', ['public' => 'true', 'label' => 'Books'] );
 
     }
 
@@ -48,8 +72,6 @@ register_activation_hook( __FILE__, [$b24Plugin, 'activate'] );
 register_deactivation_hook( __FILE__, [$b24Plugin, 'deactivate']);
 
 
-
-
 \spl_autoload_register(
     function ($className)
     {
@@ -60,14 +82,42 @@ register_deactivation_hook( __FILE__, [$b24Plugin, 'deactivate']);
     }
 );
 
-add_action('admin_menu', 'b24_add_page');
-add_action('woocommerce_order_status_completed', 'b24_createLeadWhenCompleted'); // Хук статуса заказа = "Выполнен"
+
+
+//$B24 = new \B24\B24Connector();
+
+//$B24->addLead();
+
+
+// Include the main WooCommerce class.
+//if ( ! class_exists( 'WooCommerce', false ) ) {
+//
+//    include_once $_SERVER["DOCUMENT_ROOT"] . "/wp-content/plugins/woocommerce/includes/class-wc-autoloader.php";
+//
+//
+////    include_once $_SERVER["DOCUMENT_ROOT"] . '/wp-content/plugins/woocommerce/includes/class-wc-order-item.php';
+////    include_once $_SERVER["DOCUMENT_ROOT"] . '/wp-content/plugins/woocommerce/includes/abstracts/abstract-wc-data.php';
+//
+//
+////    include_once $_SERVER["DOCUMENT_ROOT"] . '/wp-content/plugins/woocommerce/includes/class-wc-order.php';
+////    include_once $_SERVER["DOCUMENT_ROOT"] . '/wp-content/plugins/woocommerce/includes/abstracts/abstract-wc-order.php';
+//
+//    add_action('init', 'my_init', 1);
+//
+//    function my_init() {
+//        $order_id = 2791;
+//        $order = new WC_Order($order_id);
+//    }
+//
+//    //my_init();
+//
+//
+//}
+
 
 $http_post = ( 'POST' == $_SERVER['REQUEST_METHOD'] );
 
 if ( $http_post === true ) {
-
-    //$hidden = $_POST["b24_crm_hidden"];
 
     if (isset($_POST["b24_crm_hidden"]) && $_POST["b24_crm_hidden"] === 'Y'){
 
@@ -93,6 +143,11 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
 
     var_dump($order_id);
 
+    //$order = wc_get_order( $order_id );
+//
+//    $B24 = new \B24\B24Connector();
+
+    //$B24->addLead();
 }
 
 
@@ -100,23 +155,35 @@ function b24_toplevel_page() {
 
     echo "<h2>Битрикс 24</h2>";
 
-    //$test = B24\B24Struct::$arrVals;
-
     $b24Struct = new B24\B24Struct();
-    $arrOptions = $b24Struct->arrOptions;
+    $b24Form = new B24\B24WPForm();
+
+    $arrOptions = $b24Form->getOptions();
+    //$arrOptions = $b24Struct->arrOptions;
+
+    var_dump($arrOptions);
+
+
+//    $ClassOrder = new \WC\Order;
+//    $arrOrder= $ClassOrder->get(2791);
+
+    echo $b24Struct->host;
 
     ?>
 
-    <form name="form1" method="post" action="<?php echo str_replace( '%7E', '~', $_SERVER['REQUEST_URI']); ?>" accept-charset="utf-8">
-        <input type="hidden" name="<?=$arrOptions["hidden"]?>" value="Y">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-        <p>Хост системы
-            <input type="text" name="<?=$arrOptions["host"]?>"
-                   value="<?=$arrOptions["host"]?>" size="64" required placeholder="yourdomain.bitrix24.ru">
-        </p>
+    <form name="form1" method="post" action="<?php echo str_replace( '%7E', '~', $_SERVER['REQUEST_URI']); ?>" accept-charset="utf-8">
+        <input type="hidden" name="b24_crm_hidden" value="Y">
+
+        <?php
+
+        echo $b24Form->buildForm();
+
+        ?>
 
         <p class="submit">
-            <input type="submit" name="Submit" value="Подтвердить" />
+            <input type="submit" name="Submit" value="Сохранить" />
         </p>
     </form>
 <?
