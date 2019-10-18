@@ -17,7 +17,7 @@ class B24WPForm {
     ];
 
     /*
-    *
+    * get template
     */
     private function getTpl () {
 
@@ -27,8 +27,10 @@ class B24WPForm {
     }
 
 
-
-    public function buildForm () {
+    /*
+    * replace values in template form
+    */
+    public function buildForm ( array $arrOptions ) {
 
         $form = "";
 
@@ -38,11 +40,11 @@ class B24WPForm {
 
                     $tpl = $this->getTpl();
 
-                    $tpl = str_replace("[NAME]",            $item[0],   $tpl);
-                    $tpl = str_replace("[VAR_NAME]",        $item[1],   $tpl);
-                    $tpl = str_replace("[VALUE]",           "",   $tpl);
-                    $tpl = str_replace("[PLACE_HOLDER]",    $item[3],   $tpl);
-                    $tpl = str_replace("[TYPE]",            $item[2],   $tpl);
+                    $tpl = str_replace("[NAME]",            $item[0],                   $tpl);
+                    $tpl = str_replace("[VAR_NAME]",        $item[1],                   $tpl);
+                    $tpl = str_replace("[VALUE]",           $arrOptions[$item[1]],      $tpl);
+                    $tpl = str_replace("[PLACE_HOLDER]",    $item[3],                   $tpl);
+                    $tpl = str_replace("[TYPE]",            $item[2],                   $tpl);
 
                     $form .= $tpl;
 
@@ -53,6 +55,9 @@ class B24WPForm {
 
     }
 
+    /*
+    * get all options
+    */
     public function getOptions ():array {
 
         $array = [];

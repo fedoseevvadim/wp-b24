@@ -12,8 +12,13 @@ class Order {
             throw new \RuntimeException('Id of order is not defined or empty');
         }
 
-        return $wpdb->get_results("SELECT * FROM wp_woocommerce_order_items WHERE order_id = $id");
+        return $wpdb->get_results("
+                                            SELECT ITEMS.* FROM wp_woocommerce_order_items as ITEMS
+                                            WHERE ITEMS.order_id = $id
+                                        "
+                                 );
 
     }
+
 
 }

@@ -18,6 +18,10 @@ Text Domain: b24-plugin
 */
 
 //use B24;
+//use Page;
+
+use B24\B24WPForm;
+use Page\SetupPage;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -83,38 +87,6 @@ register_deactivation_hook( __FILE__, [$b24Plugin, 'deactivate']);
 );
 
 
-
-//$B24 = new \B24\B24Connector();
-
-//$B24->addLead();
-
-
-// Include the main WooCommerce class.
-//if ( ! class_exists( 'WooCommerce', false ) ) {
-//
-//    include_once $_SERVER["DOCUMENT_ROOT"] . "/wp-content/plugins/woocommerce/includes/class-wc-autoloader.php";
-//
-//
-////    include_once $_SERVER["DOCUMENT_ROOT"] . '/wp-content/plugins/woocommerce/includes/class-wc-order-item.php';
-////    include_once $_SERVER["DOCUMENT_ROOT"] . '/wp-content/plugins/woocommerce/includes/abstracts/abstract-wc-data.php';
-//
-//
-////    include_once $_SERVER["DOCUMENT_ROOT"] . '/wp-content/plugins/woocommerce/includes/class-wc-order.php';
-////    include_once $_SERVER["DOCUMENT_ROOT"] . '/wp-content/plugins/woocommerce/includes/abstracts/abstract-wc-order.php';
-//
-//    add_action('init', 'my_init', 1);
-//
-//    function my_init() {
-//        $order_id = 2791;
-//        $order = new WC_Order($order_id);
-//    }
-//
-//    //my_init();
-//
-//
-//}
-
-
 $http_post = ( 'POST' == $_SERVER['REQUEST_METHOD'] );
 
 if ( $http_post === true ) {
@@ -151,42 +123,55 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
 }
 
 
-function b24_toplevel_page() {
 
-    echo "<h2>Битрикс 24</h2>";
+function b24_toplevel_page () {
 
-    $b24Struct = new B24\B24Struct();
-    $b24Form = new B24\B24WPForm();
+    $setupPage = new Page\SetupPage();
 
-    $arrOptions = $b24Form->getOptions();
-    //$arrOptions = $b24Struct->arrOptions;
+    $ORDER = \WC\Order::get( 2791 );
+    //$arrPost = get_post(2777);
+    $arrPost = get_post_meta(2777);
 
-    var_dump($arrOptions);
+//    var_dump($arrPost);
 
 
-//    $ClassOrder = new \WC\Order;
-//    $arrOrder= $ClassOrder->get(2791);
+    if ( is_array($arrPost)) {
 
-    echo $b24Struct->host;
+        $b24Form = new B24WPForm();
 
-    ?>
+        $id = $arrPost["_customer_user"][0];
+        $arrUser =  get_user_meta($id);
 
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        $arrOptions = $b24Form->getOptions();
 
-    <form name="form1" method="post" action="<?php echo str_replace( '%7E', '~', $_SERVER['REQUEST_URI']); ?>" accept-charset="utf-8">
-        <input type="hidden" name="b24_crm_hidden" value="Y">
+        $B24 = new \B24\B24Connector (
+                                        $arrOptions["host"],
+                                        $arrOptions["login"],
+                                        $arrOptions["password"],
+                                        $arrOptions["client_id"],
+                                        $arrOptions["client_secret"]
+        );
 
-        <?php
 
-        echo $b24Form->buildForm();
+        if ( $B24->accessToken ) {
+            $contactID =  $B24->addContact($arrUser);
+        }
 
-        ?>
+        if ( $contactID > 0 ) {
 
-        <p class="submit">
-            <input type="submit" name="Submit" value="Сохранить" />
-        </p>
-    </form>
-<?
+            $arrData["CONTACT_ID"] = $contactID;
+            $B24->addDeal($arrPost);
+        }
+
+    }
+
+
+
+    //var_dump($ORDER);
+
 }
+
+
+
 ?>
 
