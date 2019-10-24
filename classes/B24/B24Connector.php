@@ -14,9 +14,13 @@ class B24Connector implements B24 {
     public $clientId;
     public $clientSecret;
 
+    public $error;
+
     const leadTitle = "Новый заказ с сайта";
     const dealTitle = "Новый заказ с сайта";
     const statusId = "NEW";
+
+    const prefix = "UF_CRM_";
 
     public  $curl;
 
@@ -33,7 +37,9 @@ class B24Connector implements B24 {
     ];
 
     private static $arrDealFields = [
-        ["CONTACT_ID", "CONTACT_ID"]
+        ["CONTACT_ID",  "CONTACT_ID"],
+        ["SOURCE_ID",   "SOURCE_ID"],
+        ["CATEGORY_ID", "CATEGORY_ID"],
     ];
 
     public function __construct( $crmUrl, $crmLogin, $crmPassword, $client_id, $clientSecret ) {
@@ -65,6 +71,26 @@ class B24Connector implements B24 {
         $this->clientSecret = $clientSecret;
 
         $this->autorise();
+
+    }
+
+    /**
+    * addLead - check connection to the host
+    * @param   $params array for query
+    * @return  bolean
+    */
+    public function checkConnection ( $hostName ) {
+
+        $fp = fsockopen("tcp://$hostName", 443, $errno, $errstr);
+
+        if ( !$fp ) {
+
+            $this->error = "ERROR: $errno - $errstr<br />\n";
+
+            return false;
+        }
+
+        return true;
 
     }
 
@@ -230,16 +256,77 @@ class B24Connector implements B24 {
         $restQuery = "crm.deal.add.json";
 
         $params["auth"]                 = $this->accessToken;
-        $params["fields"]['TITLE']      = self::dealTitle . $data['client_name'];
+        $params["fields"]['TITLE']      = self::dealTitle;// . $data['client_name'];
 
-        foreach (self::$arrDealFields as $key => $item ) {
-
-            $params["fields"][$item[1]] = $data[$item[0]][0];
-
-        }
+        $params = $this->mapFieldsB24( $data, $params );
 
         $response = $this->buildQuery( $params, $restQuery );
         return $response['result'];
+    }
+
+    /**
+    * mapFieldsB24 - map fields to B24
+    * @param   array $data      - array of data
+    * @param   array $params    - array of params for B24
+    * @return array $params
+    */
+    public function mapFieldsB24 ( array $data, array $params ): array {
+
+        $arrUserFields = $this->getDealUserFileds();
+
+        foreach ( $data as $key => $item ) {
+
+            $type = gettype($item);
+
+            if ( strpos( $key, self::prefix ) === false ) {
+                $params["fields"][$key] = $item;
+                continue;
+
+            }
+
+            // search element in B24
+            $bFieldFound = false;
+
+            foreach ( $arrUserFields as $field ) {
+
+                if ( $field["FIELD_NAME"] === $key ) {
+
+                    $bFieldFound = true;
+
+                    switch ( $field["USER_TYPE_ID"] ) {
+
+                            // map date
+                        case "date":
+                            $params["fields"][$key] = $data[$key];
+                            continue;
+                            break;
+
+                            // find id in B24 values
+                        case "enumeration":
+
+                            $listID = array_search( $item, array_column( $field["LIST"], 'VALUE') );
+
+                            if ( $listID >= 0 ) {
+                                $ID = (int) $field["LIST"][$listID]["ID"];
+                                $params["fields"][$key] = $ID;
+                                continue;
+                            }
+
+                        case "string" or "integer" or "boolean":
+                            $params["fields"][$key] = $item;
+                            break;
+
+                    }
+                }
+            }
+
+            if ( $bFieldFound === false ) {
+                $params["fields"][$key] = $item;
+            }
+
+        }
+
+        return $params;
     }
 
     /**
@@ -253,11 +340,11 @@ class B24Connector implements B24 {
             throw new \RuntimeException('Data is empty');
         }
 
-        $result = $this->getContactByEmail( $data['billing_email'] );
+        $result = $this->getContactByEmail( $data['billing_email'][0] );
 
         if ( is_array( $result) AND count($result) > 0 ) {
 
-            $userId = (int) $result;
+            $userId = (int) $result[0]["ID"];
 
             return $userId;
         }
@@ -310,5 +397,23 @@ class B24Connector implements B24 {
 
         return $response['result'];
     }
+
+    /**
+     * getDealUserFileds - get user fields
+     * @param   no params
+     * @return result
+     */
+    public function getDealUserFileds () {
+
+        $restQuery      = "crm.deal.userfield.list";
+        $params["auth"] = $this->accessToken;
+        $response       = $this->buildQuery( $params, $restQuery );
+
+        return $response['result'];
+
+
+    }
+
+
 
 }

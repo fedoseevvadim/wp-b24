@@ -6,22 +6,39 @@ class B24WPForm {
 
     const path = "/wp-content/plugins/b24-plugin/tpl/";
 
+    // Settings
     private static $arrForm = [
 
-        ["Хост системы",        "host",         "text", "yourdomain.bitrix24.ru"],
-        ["Логин пользователя",  "login",        "text", "User login"],
-        ["Пароль пользователя", "password",     "text", "User password"],
-        ["Client ID",           "client_id",    "text", "Client ID"],
-        ["Client Secret Key",   "client_secret","text", "Client Secret Key"],
-
+        ["Хост системы",            "host",         "text", "yourdomain.bitrix24.ru"],
+        ["Логин пользователя",      "login",        "text", "User login"],
+        ["Пароль пользователя",     "password",     "text", "User password"],
+        ["Client ID",               "client_id",    "text", "Client ID"],
+        ["Client Secret Key",       "client_secret","text", "Client Secret Key"],
+        ["Наименование источника",  "source_name",  "text", "название сайта (например)"],
+        ["Связь по полям",          "field_link",   "textarea", "поле битрикс []->[] "],
     ];
 
     /*
     * get template
     */
-    private function getTpl () {
+    private function getTpl ($type) {
 
-        $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::path."input.html");
+        switch ( $type ) {
+
+            case "text":
+
+                $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::path."input.html");
+
+                break;
+
+            case "textarea":
+
+                $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::path."textarea.html");
+
+                break;
+        }
+
+
 
         return $tpl_input;
     }
@@ -38,7 +55,7 @@ class B24WPForm {
 
             if ( $item[2] === "text" ) {
 
-                    $tpl = $this->getTpl();
+                    $tpl = $this->getTpl("text");
 
                     $tpl = str_replace("[NAME]",            $item[0],                   $tpl);
                     $tpl = str_replace("[VAR_NAME]",        $item[1],                   $tpl);
@@ -48,6 +65,17 @@ class B24WPForm {
 
                     $form .= $tpl;
 
+            }
+
+            if ( $item[2] === "textarea" ) {
+
+                $tpl = $this->getTpl("textarea");
+
+                $tpl = str_replace("[NAME]",            $item[0],                   $tpl);
+                $tpl = str_replace("[VAR_NAME]",        $item[1],                   $tpl);
+                $tpl = str_replace("[VALUE]",           $arrOptions[$item[1]],      $tpl);
+
+                $form .= $tpl;
             }
         }
 

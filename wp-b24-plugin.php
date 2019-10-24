@@ -32,17 +32,6 @@ class B24Plugin {
         add_action('admin_menu', 'b24_add_page');
         add_action('woocommerce_order_status_completed', 'b24_createLeadWhenCompleted'); // Хук статуса заказа = "Выполнен"
 
-        // Include the main WooCommerce class.
-//        if ( ! class_exists( 'WooCommerce', false ) ) {
-//            include_once dirname( __FILE__ ) . '/includes/class-woocommerce.php';
-//        }
-
-        //add_action( 'init', array( $this, 'custom_post_type'));
-
-
-
-        //$B24 = new \B24\B24Connector();
-
     }
 
     function activate() {
@@ -113,13 +102,131 @@ function b24_add_page() {
  */
 function b24_createLeadWhenCompleted ($order_id, $debug = '') {
 
-    var_dump($order_id);
+    if ( $order_id === 1 ) {
 
-    //$order = wc_get_order( $order_id );
-//
-//    $B24 = new \B24\B24Connector();
 
-    //$B24->addLead();
+        $ORDER = \WC\Order::get($order_id);
+        $arrPOST_ORDER = get_post_meta($order_id);
+        $arrORDER_TERMS = get_post_meta($ORDER['order_item_id']);
+
+        $arrPOST_TERMS = wp_get_object_terms($ORDER['order_item_id'], 'product_cat');
+
+        // Если выбран тип мероприятия - должна создаваться Сделка + Контакт в воронке Живые Мероприятия.
+        // Если выбран Тип цифрового продукта, должна создаваться Сделка + Контакт в воронке "Цифровые продукты".
+
+        $CategoryId = 0;
+
+        if ($arrPOST_TERMS[0]->term_id === 16) { // Живые мероприятия
+            $CategoryId = 0;
+        }
+
+        if ($arrPOST_TERMS[0]->term_id === 42) { // Цифровые продукты
+            $CategoryId = 1;
+        }
+
+        if (is_array($arrPOST_ORDER) AND is_array($ORDER)) {
+
+            $b24Form = new B24WPForm();
+
+            $id = $arrPOST_ORDER["_customer_user"][0];
+            $arrUser = get_user_meta($id);
+
+            $arrOptions = $b24Form->getOptions();
+
+            $B24 = new \B24\B24Connector (
+                $arrOptions["host"],
+                $arrOptions["login"],
+                $arrOptions["password"],
+                $arrOptions["client_id"],
+                $arrOptions["client_secret"]
+            );
+
+            // Before we start, let's check connection to server
+            $bCheckConnection = $B24->checkConnection($arrOptions["host"]);
+
+            if ($B24->accessToken) {
+                $contactID = $B24->addContact($arrUser);
+            }
+
+            if ($contactID > 0 AND $bCheckConnection === true) {
+
+                // Standard fileds
+                $arrData["CATEGORY_ID"] = $CategoryId;
+                $arrData["CONTACT_ID"] = $contactID;
+                //$arrData["ACCOUNT_CURRENCY_ID"] =
+
+                if ($arrOptions["field_link"]) {
+
+                    $arrayOfLines = explode("\r\n", $arrOptions["field_link"]);
+
+                    if (is_array($arrayOfLines)) {
+
+                        foreach ($arrayOfLines as $value) {
+
+                            $arrElem = explode("=>", $value);
+
+                            // OPPORTUNITY=>_price
+                            if (count($arrElem) === 2) {
+                                $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[1]][0];
+
+                                switch ($arrElem[1]) {
+                                    // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
+                                    case "TERMS":
+
+                                        $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[2]][0];
+
+                                        break;
+
+                                    default:
+
+                                        $arrData[$arrElem[0]] = $arrElem[1];
+                                        break;
+                                }
+                            }
+
+                            if (count($arrElem) === 3) {
+
+                                switch ($arrElem[1]) {
+
+                                    // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
+                                    case "TERMS":
+
+                                        $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[2]][0];
+
+                                        break;
+
+                                    // UF_CRM_1569421314=>ORDER=>order_item_name
+                                    case "ORDER":
+
+                                        $itemID = $arrElem[2];
+                                        $value = $ORDER[0]->$itemID;
+                                        $arrData[$arrElem[0]] = $value;
+
+                                        break;
+
+                                    case "POST_ORDER":
+
+                                        $itemID = $arrElem[2];
+                                        $value = $arrPOST_ORDER[$itemID][0];
+                                        $arrData[$arrElem[0]] = $value;
+
+                                        break;
+
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $B24->addDeal($arrData);
+
+                var_dump($arrData);
+            }
+
+        }
+
+    }
+
 }
 
 
@@ -128,46 +235,137 @@ function b24_toplevel_page () {
 
     $setupPage = new Page\SetupPage();
 
-    $ORDER = \WC\Order::get( 2791 );
-    //$arrPost = get_post(2777);
-    $arrPost = get_post_meta(2777);
-
-//    var_dump($arrPost);
 
 
-    if ( is_array($arrPost)) {
+//    $ORDER = \WC\Order::get( 3867 );
+//    $arrPOST_ORDER   = get_post_meta(3867);
+//    $arrORDER_TERMS  = get_post_meta(2798);
+//
+//    $arrPOST_TERMS = wp_get_object_terms(2798, 'product_cat');
+//
+//    // Если выбран тип мероприятия - должна создаваться Сделка + Контакт в воронке Живые Мероприятия.
+//    // Если выбран Тип цифрового продукта, должна создаваться Сделка + Контакт в воронке "Цифровые продукты".
+//
+//    $CategoryId = 0;
+//
+//    if ( $arrPOST_TERMS[0]->term_id === 16 ) { // Живые мероприятия
+//        $CategoryId = 0;
+//    }
+//
+//    if ( $arrPOST_TERMS[0]->term_id === 42 ) { // Цифровые продукты
+//        $CategoryId = 1;
+//    }
+//
+//    if ( is_array( $arrPOST_ORDER ) AND is_array( $ORDER )) {
+//
+//        $b24Form = new B24WPForm();
+//
+//        $id = $arrPOST_ORDER["_customer_user"][0];
+//        $arrUser =  get_user_meta($id);
+//
+//        $arrOptions = $b24Form->getOptions();
+//
+//        $B24 = new \B24\B24Connector (
+//                                        $arrOptions["host"],
+//                                        $arrOptions["login"],
+//                                        $arrOptions["password"],
+//                                        $arrOptions["client_id"],
+//                                        $arrOptions["client_secret"]
+//        );
+//
+//        $bCheckConnection = $B24->checkConnection( $arrOptions["host"] );
+//
+//        if ( $B24->accessToken ) {
+//            $contactID =  $B24->addContact($arrUser);
+//        }
+//
+//        if ( $contactID > 0 AND $bCheckConnection === true ) {
+//
+//            // Standard fileds
+//            $arrData["CATEGORY_ID"]         = $CategoryId;
+//            $arrData["CONTACT_ID"]          = $contactID;
+//            //$arrData["ACCOUNT_CURRENCY_ID"] =
+//
+//            if ( $arrOptions["field_link"] ) {
+//
+//                $arrayOfLines = explode("\r\n", $arrOptions["field_link"] );
+//
+//                if ( is_array($arrayOfLines) ) {
+//
+//                    foreach ( $arrayOfLines as $value ) {
+//
+//                        $arrElem = explode("=>", $value );
+//
+//                        // OPPORTUNITY=>_price
+//                        if ( count($arrElem) === 2 ) {
+//                            $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[1]][0];
+//
+//                            switch ($arrElem[1]) {
+//                                // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
+//                                case "TERMS":
+//
+//                                    $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[2]][0];
+//
+//                                    break;
+//
+//                                default:
+//
+//                                    $arrData[$arrElem[0]] = $arrElem[1];
+//                                    break;
+//                            }
+//                        }
+//
+//                        if ( count($arrElem) === 3 ) {
+//
+//                            switch ($arrElem[1]) {
+//
+//                                // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
+//                                case "TERMS":
+//
+//                                    $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[2]][0];
+//
+//                                    break;
+//
+//                                // UF_CRM_1569421314=>ORDER=>order_item_name
+//                                case "ORDER":
+//
+//                                    $itemID = $arrElem[2];
+//                                    $value = $ORDER[0]->$itemID;
+//                                    $arrData[$arrElem[0]] = $value;
+//
+//                                    break;
+//
+//                                case "POST_ORDER":
+//
+//                                    $itemID = $arrElem[2];
+//                                    $value = $arrPOST_ORDER[$itemID][0];
+//                                    $arrData[$arrElem[0]] = $value;
+//
+//                                    break;
+//
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//
+//            $B24->addDeal($arrData);
+//
+//
+//
+//
+//            var_dump($arrData);
+//        }
 
-        $b24Form = new B24WPForm();
-
-        $id = $arrPost["_customer_user"][0];
-        $arrUser =  get_user_meta($id);
-
-        $arrOptions = $b24Form->getOptions();
-
-        $B24 = new \B24\B24Connector (
-                                        $arrOptions["host"],
-                                        $arrOptions["login"],
-                                        $arrOptions["password"],
-                                        $arrOptions["client_id"],
-                                        $arrOptions["client_secret"]
-        );
-
-
-        if ( $B24->accessToken ) {
-            $contactID =  $B24->addContact($arrUser);
-        }
-
-        if ( $contactID > 0 ) {
-
-            $arrData["CONTACT_ID"] = $contactID;
-            $B24->addDeal($arrPost);
-        }
-
-    }
 
 
 
-    //var_dump($ORDER);
+//            echo "Пользовательские поля в сделке (Битрикс 24):<br>";
+//
+//            foreach ( $arrFields as $key => $value ) {
+//                echo $value["FIELD_NAME"] . "<br>";
+//            }
+//    }
 
 }
 
