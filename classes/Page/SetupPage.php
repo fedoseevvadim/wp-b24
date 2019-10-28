@@ -2,8 +2,8 @@
 
 namespace Page;
 
-use B24\B24Struct;
-use B24\B24WPForm;
+use B24\Struct;
+use B24\WPForm;
 
 class SetupPage {
 
@@ -13,7 +13,7 @@ class SetupPage {
     function __construct() {
 
         echo "<h2>" . self::title . "</h2>";
-        $b24Form = new B24WPForm();
+        $b24Form = new WPForm();
 
         $arrOptions = $b24Form->getOptions();
 

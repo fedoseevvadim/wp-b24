@@ -2,7 +2,7 @@
 
 namespace B24;
 
-class B24Struct {
+class Struct {
 
     private static $arrVals = [
         "b24_crm_host" => "host",
