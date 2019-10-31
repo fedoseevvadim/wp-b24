@@ -4,7 +4,7 @@ namespace B24;
 
 class WPForm {
 
-    const path = "/wp-content/plugins/b24-plugin/tpl/";
+    const PATH = "/wp-content/plugins/b24-plugin/tpl/";
 
     // Settings
     private static $arrForm = [
@@ -30,13 +30,13 @@ class WPForm {
 
             case "text":
 
-                $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::path."input.html");
+                $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::PATH."input.html");
 
                 break;
 
             case "textarea":
 
-                $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::path."textarea.html");
+                $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::PATH."textarea.html");
 
                 break;
         }

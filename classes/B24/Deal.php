@@ -4,13 +4,15 @@
 namespace B24;
 
 
-class Deal implements B24Object {
+final class Deal implements B24Object {
 
-    const dealTitle = "Новый заказ с сайта";
+    const TITLE     = "Новый заказ с сайта";
+    const STATUS_ID = "NEW";
 
-    const statusId = "NEW";
-    public $rest = "crm.lead.add.json";
+    public $rest = "crm.deal.add.json";
     private $connector;
+
+    use MapFields;
 
     private static $arrDealFields = [
         ["CONTACT_ID",  "CONTACT_ID"],
@@ -41,6 +43,23 @@ class Deal implements B24Object {
     }
 
     /**
+     * setTitle - set up title
+     * @param   string $title - new title name
+     */
+    private function setTitle( string $title ): string {
+
+        // Set up title
+        if ( $title ) {
+            $title = $title;
+        } else {
+            $title = self::TITLE;
+        }
+
+        return $title;
+
+    }
+
+    /**
      * get - get element
      * @param   string $item - kind of property
      */
@@ -50,19 +69,12 @@ class Deal implements B24Object {
             throw new \InvalidArgumentException('Data is empty');
         }
 
-        // Set up title
-        if ( $data["TITLE"] ) {
-            $title = $data["TITLE"];
-        } else {
-            $title = self::leadTitle;
-        }
+        $data["auth"]                 = $this->connector->accessToken;
+        $data["fields"]['TITLE']      = $this->setTitle( $data["fields"]["TITLE"] ) . $data['client_name'];
+        $data["fields"]['NAME']       = $data['name'];
+        $data["fields"]['STATUS_ID']  = self::STATUS_ID;
 
-        $params["auth"]                 = $this->connector->accessToken;
-        $params["fields"]['TITLE']      = $title . $data['client_name'];
-        $params["fields"]['NAME']       = $data['name'];
-        $params["fields"]['STATUS_ID']  = self::statusId;
-
-        $response = $this->connector->buildQuery( $params, $this->rest );
+        $response = $this->connector->buildQuery( $data, $this->rest );
 
         return $response['result'];
 
@@ -70,76 +82,10 @@ class Deal implements B24Object {
 
 
     /**
-     * mapFieldsB24 - map fields to B24
-     * @param   array $data      - array of data
-     * @param   array $params    - array of params for B24
-     * @return array $params
-     */
-    public function mapFieldsB24 ( array $data, array $params ): array {
-
-        $arrUserFields = $this->getDealUserFileds();
-
-        foreach ( $data as $key => $item ) {
-
-            $type = gettype($item);
-
-            if ( strpos( $key, self::prefix ) === false ) {
-                $params["fields"][$key] = $item;
-                continue;
-
-            }
-
-            // search element in B24
-            $bFieldFound = false;
-
-            foreach ( $arrUserFields as $field ) {
-
-                if ( $field["FIELD_NAME"] === $key ) {
-
-                    $bFieldFound = true;
-
-                    switch ( $field["USER_TYPE_ID"] ) {
-
-                        // map date
-                        case "date":
-                            $params["fields"][$key] = $data[$key];
-                            continue;
-                            break;
-
-                        // find id in B24 values
-                        case "enumeration":
-
-                            $listID = array_search( $item, array_column( $field["LIST"], 'VALUE') );
-
-                            if ( $listID >= 0 ) {
-                                $ID = (int) $field["LIST"][$listID]["ID"];
-                                $params["fields"][$key] = $ID;
-                                continue;
-                            }
-
-                        case "string" or "integer" or "boolean":
-                            $params["fields"][$key] = $item;
-                            break;
-
-                    }
-                }
-            }
-
-            if ( $bFieldFound === false ) {
-                $params["fields"][$key] = $item;
-            }
-
-        }
-
-        return $params;
-    }
-
-
-    /**
-     * getDealUserFileds - get user fields
-     * @param   no params
-     * @return result
-     */
+    * getDealUserFileds - get user fields
+    * @param   no params
+    * @return $response['result']
+    */
     public function getDealUserFileds () {
 
         $restQuery      = "crm.deal.userfield.list";
@@ -148,4 +94,5 @@ class Deal implements B24Object {
         $response       = $this->connector->buildQuery( $params, $restQuery );
         return $response['result'];
     }
+
 }

@@ -116,9 +116,9 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
             $arrOptions["client_secret"]
         );
 
-        $b24Deal    = new \B24\Lead($B24);
+        $b24Deal    = new \B24\Deal($B24);
         $b24Contact = new \B24\Contact($B24);
-
+        $parser     = new \Parser\Settings ();
 
         $ORDER          = \WC\Order::get($order_id); // get order data
         $arrPOST_ORDER  = get_post_meta( $order_id );
@@ -126,10 +126,9 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
         // Go through every order item
         if ( is_array( $ORDER ) ) {
 
-            $i = 0;
+            $iTitle = 1;
 
             foreach ( $ORDER as $orderItem ) {
-
 
                 $item               = new WC_Order_Item_Product($orderItem->order_item_id);
                 $product_id         = $item->get_product_id();
@@ -137,7 +136,11 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
                 $arrORDER_TERMS     = get_post_meta($product_id);
                 $arrPOST_TERMS      = wp_get_object_terms($product_id, 'product_cat');
 
-                $categoryId = $B24Terms->getTerm( $arrPOST_TERMS[$i]->term_id );
+                $arrPOST_ORDER["_quantity"][0] = $item->get_quantity();
+                $arrPOST_ORDER["_total"][0] = $item->get_subtotal();
+                $arrPOST_ORDER["_comments"][0] = \WC\Order::rsp_get_wc_order_notes($order_id);
+
+                $categoryId = $B24Terms->getTerm( $arrPOST_TERMS[0]->term_id );
 
                 if (is_array($arrPOST_ORDER) AND is_array($ORDER)) {
 
@@ -148,44 +151,53 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
                     $bCheckConnection = $B24->checkConnection($arrOptions["host"]);
 
                     if ($B24->accessToken) {
-                        $contactID = $b24Contact->set( $arrUser );
+                        $arrUser["contact"] = $arrOptions["contact"];
+                        $contactID          = $b24Contact->set( $arrUser );
                     }
 
                     if ($contactID > 0 AND $bCheckConnection === true) {
 
-                        // Standard fileds
+                        if ( count( $ORDER ) > 1 ) {
+                            $title = "/" . $iTitle;
+                        } else {
+                            $title = "";
+                        }
+
+                        // Standard fields
                         $arrData["CATEGORY_ID"] = $categoryId;
                         $arrData["CONTACT_ID"]  = $contactID;
-                        $arrData["TITLE"]       = $arrOptions["deal_name"] . " #" . $ORDER[0]->order_id;
+                        $arrData["TITLE"]       = $arrOptions["deal_name"] . " #" . $ORDER[0]->order_id . $title;
 
                         $paymentMethod = strtolower($arrPOST_ORDER["_payment_method"][0]);
 
-                        $parser = new \Parser\Settings ();
-                        $arrData = $parser->parseSettings(
+                        $parser->setOrder($ORDER);
+                        $parser->setPostOrder($arrPOST_ORDER);
+                        $parser->setTerms($arrORDER_TERMS);
+
+                        $arrData = $parser->parseFields(
                             $arrOptions["field_link"],
-                            $arrData,
-                            $ORDER,
-                            $arrORDER_TERMS,
-                            $arrPOST_ORDER
+                            $arrData
                         );
+
+                        $arrUserFields = $b24Deal->getDealUserFileds();
+                        $params = [];
+                        $params = $b24Deal->map ( $arrUserFields, $arrData, $params );
 
                         // Search payment method
                         // UF_CRM_1569421090=>РК: Альфа Банк
-                        $arrUserFields = $b24Deal->getDealUserFileds();
                         $paymentKeyVal = \B24\Data::getPaymentID( $paymentMethod, $arrUserFields );
 
                         if ( is_array($paymentKeyVal) ) {
-                            $arrData[$paymentKeyVal[0]] = (int) $paymentKeyVal[1];
+                            $params["fields"][$paymentKeyVal[0]] = (int) $paymentKeyVal[1];
                         }
 
-                        $b24Deal->set($arrData);
+                        $b24Deal->set($params);
 
                     }
 
                 }
 
-
-                $i++;
+                $iTitle++;
 
             }
 

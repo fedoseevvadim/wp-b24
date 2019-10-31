@@ -4,14 +4,16 @@
 namespace B24;
 
 
-class Lead implements B24Object {
+final class Lead implements B24Object {
+
+    use MapFields;
 
     public $rest = "crm.lead.add.json";
 
     private $connector;
 
-    const statusId = "NEW";
-    const leadTitle = "Новый заказ с сайта"; // Default name
+    const STATUS_ID = "NEW";
+    const TITLE     = "Новый заказ с сайта"; // Default name
 
     public function __construct( $connector ) {
 

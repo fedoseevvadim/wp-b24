@@ -5,24 +5,92 @@ namespace Parser;
 
 class Settings {
 
+    public $terms;
+    public $order;
+    public $postOrder;
+    public $user;
 
-    public function getArray( $value ):array {
+    /**
+    * setTerms - set var terms
+    * @param   string terms
+    *
+    */
+    public function setTerms( array $terms ) {
 
-        return explode(Struct::delimeter, $value);
+        if ( empty ( $terms ) ) {
+            throw new \InvalidArgumentException('No terms has past');
+        }
+
+        $this->terms = $terms;
+
+    }
+
+    /**
+    * setOrder - set var order
+    * @param   array
+    *
+    */
+    public function setOrder( array $order ) {
+
+        if ( empty ( $order ) ) {
+            throw new \InvalidArgumentException('No order has past');
+        }
+
+        $this->order = $order;
 
     }
 
 
-    private function parseTwoVal ( $arrElem, &$arrData, &$arrORDER_TERMS ) {
+    /**
+    * setPostOrder - set var post Order
+    * @param   array
+    *
+    */
+    public function setPostOrder( array $postOrder ) {
 
-        $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[1]][0];
+        if ( empty ( $postOrder ) ) {
+            throw new \InvalidArgumentException('No postOrder has past');
+        }
+
+        $this->postOrder = $postOrder;
+
+    }
+
+
+    /**
+     * setPostOrder - set var post Order
+     * @param   array
+     *
+     */
+    public function setUser( array $user ) {
+
+        if ( empty ( $user ) ) {
+            throw new \InvalidArgumentException('User date were not past');
+        }
+
+        $this->user = $user;
+
+    }
+
+
+
+    public function getArray( $value ):array {
+
+        return explode(Struct::DELIMETER, $value);
+
+    }
+
+
+    private function parseTwoVal ( $arrElem, &$arrData ) {
+
+        $arrData[$arrElem[0]] = $this->terms[$arrElem[1]][0];
 
         switch ($arrElem[1]) {
 
             // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
             case "TERMS":
                 $this->parseTerms();
-                $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[2]][0];
+                $arrData[$arrElem[0]] = $this->terms[$arrElem[2]][0];
 
                 break;
 
@@ -36,14 +104,16 @@ class Settings {
     }
 
 
-    private function parseThreeVal ($arrElem, &$arrData, &$arrORDER_TERMS, $ORDER, $arrPOST_ORDER) {
+    private function parseThreeVal ($arrElem, &$arrData) {
+
+        //$this->checkAdditionalValues();
 
         switch ($arrElem[1]) {
 
             // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
             case "TERMS":
 
-                $arrData[$arrElem[0]] = $arrORDER_TERMS[$arrElem[2]][0];
+                $arrData[$arrElem[0]] = $this->terms[$arrElem[2]][0];
 
                 break;
 
@@ -51,7 +121,15 @@ class Settings {
             case "ORDER":
 
                 $itemID = $arrElem[2];
-                $value = $ORDER[0]->$itemID;
+                $value = $this->order[0]->$itemID;
+                $arrData[$arrElem[0]] = $value;
+
+                break;
+
+            case "USER":
+
+                $itemID = $arrElem[2];
+                $value = $this->user[$itemID][0];
                 $arrData[$arrElem[0]] = $value;
 
                 break;
@@ -59,7 +137,7 @@ class Settings {
             case "POST_ORDER":
 
                 $itemID = $arrElem[2];
-                $value = $arrPOST_ORDER[$itemID][0];
+                $value = $this->postOrder[$itemID][0];
                 $arrData[$arrElem[0]] = $value;
 
                 break;
@@ -68,10 +146,19 @@ class Settings {
 
     }
 
-    public function parseSettings ( $fields, $arrData, $ORDER, $arrORDER_TERMS, $arrPOST_ORDER ) {
+
+    public function parseFields ( string $fields, array $arrData ) : array {
+
+        if ( empty ( $fields ) ) {
+            throw new \InvalidArgumentException('Fields cannot be empty');
+        }
+
+        if ( empty ( $arrData ) ) {
+            throw new \InvalidArgumentException('ArrData cannot be empty');
+        }
 
         $arrayOfLines = explode(
-            Struct::delimeterLines,
+            Struct::DELIMETER_FOR_LINES,
             $fields
         );
 
@@ -83,12 +170,12 @@ class Settings {
 
                 // OPPORTUNITY=>_price
                 if ( count( $arrElem ) === 2 ) {
-                    $this->parseTwoVal( $arrElem, $arrData,$arrORDER_TERMS );
+                    $this->parseTwoVal( $arrElem, $arrData );
                 }
 
                 // UF_CRM_1569421314=>ORDER=>order_item_name
                 if ( count( $arrElem) === 3 ) {
-                    $this->parseThreeVal( $arrElem, $arrData,$arrORDER_TERMS, $ORDER, $arrPOST_ORDER );
+                    $this->parseThreeVal( $arrElem, $arrData );
                 }
             }
         }
@@ -97,5 +184,23 @@ class Settings {
 
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\
+    // CHECK DATA FUNCTIONS
+
+    private function checkAdditionalValues() {
+
+        if ( empty ( $this->terms ) ) {
+            throw new \RuntimeException('No Terms were past to function setTerms()');
+        }
+
+        if ( empty ( $this->order ) ) {
+            throw new \RuntimeException('ORDER was no past to function setOrder()');
+        }
+
+        if ( empty ( $this->postOrder ) ) {
+            throw new \RuntimeException('POST ORDER was no past to function setPostOrder()');
+        }
+
+    }
 
 }

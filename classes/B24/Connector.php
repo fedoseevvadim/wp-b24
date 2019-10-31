@@ -3,7 +3,7 @@
 namespace B24;
 
 
-class Connector implements B24 {
+final class Connector implements B24 {
 
     public $accessToken;
     public $accessObj;
@@ -15,11 +15,17 @@ class Connector implements B24 {
     public $clientSecret;
 
     public $error;
-
-
     public  $curl;
 
-    public function __construct( $crmUrl, $crmLogin, $crmPassword, $client_id, $clientSecret ) {
+    const PROTOCOL = "https://";
+
+    public function __construct(
+                                    string $crmUrl,
+                                    string $crmLogin,
+                                    string $crmPassword,
+                                    string $client_id,
+                                    string $clientSecret
+                                ) {
 
         if ( empty ( $crmUrl ) ) {
             throw new \InvalidArgumentException('No url crm provided');
@@ -79,7 +85,7 @@ class Connector implements B24 {
 
     public function initCurl () {
 
-        $_url   = 'https://'.$this->crmUrl;
+        $_url   = self::PROTOCOL . $this->crmUrl;
 
         $ch     = curl_init();
 
@@ -156,7 +162,7 @@ class Connector implements B24 {
         curl_setopt(
             $ch,
             CURLOPT_URL,
-            'https://'.$this->crmUrl.'/oauth/token/?grant_type=authorization_code&client_id='.$this->clientId.'&client_secret='.$this->clientSecret.'&code='.$code_final.'&scope=crm'
+            self::PROTOCOL . $this->crmUrl.'/oauth/token/?grant_type=authorization_code&client_id='.$this->clientId.'&client_secret='.$this->clientSecret.'&code='.$code_final.'&scope=crm'
         );
 
         curl_setopt( $ch, CURLOPT_HEADER, false );
@@ -179,7 +185,7 @@ class Connector implements B24 {
     */
     public function buildQuery ( array $params, $restQuery ): array {
 
-        $c = curl_init('https://'.$this->crmUrl.'/rest/' . $restQuery );
+        $c = curl_init(self::PROTOCOL . $this->crmUrl.'/rest/' . $restQuery );
 
         try {
 

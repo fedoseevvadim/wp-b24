@@ -17,10 +17,19 @@ class Terms {
 
         }
 
-        $this->arrTerms = explode(
-            \Parser\Struct::delimeterLines,
+        $arrLines = explode(
+            \Parser\Struct::DELIMETER_FOR_LINES,
             $sOption
         );
+
+        foreach ( $arrLines as $line ) {
+
+            $this->arrTerms[] =  explode(
+                \Parser\Struct::DELIMETER,
+                $line
+            );
+
+        }
 
     }
 
@@ -32,14 +41,13 @@ class Terms {
 
         }
 
-        $termID = array_search($termID, $this->arrTerms);
+        $termID = array_search($termID, array_column($this->arrTerms, "0"));
 
-        if ( $termID > 0 ) {
-            return $this->arrTerms[$termID];
-        } else {
+        if ( $termID === false ) {
             return $this->defaultCategory;
         }
 
+        return $this->arrTerms[$termID][1];
 
     }
 

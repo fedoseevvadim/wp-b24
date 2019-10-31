@@ -4,7 +4,13 @@ namespace B24;
 
 interface B24 {
 
-    public function __construct($crmUrl, $crmLogin, $crmPassword, $client_id, $clientSecret);
+    public function __construct(
+                                    string $crmUrl,
+                                    string $crmLogin,
+                                    string $crmPassword,
+                                    string $client_id,
+                                    string $clientSecret
+                                );
 
     public function autorise();
 

@@ -4,13 +4,19 @@
 namespace B24;
 
 
-class Contact implements B24Object {
+use Parser\Struct;
 
-    public $rest = "crm.contact.list.json";
+final class Contact implements B24Object {
 
-    const statusId = "NEW";
-    const prefix = "UF_CRM_";
+    public $list    = "crm.contact.list.json";
+    public $add     = "crm.contact.add.json";
+    public $uf      = "crm.contact.userfield.list";
+
+    const STATUS_ID = "NEW";
+
     private $connector;
+
+    use MapFields;
 
     // map fileds
     // First Elem - WP
@@ -47,7 +53,7 @@ class Contact implements B24Object {
         $params["auth"]     = $this->connector->accessToken;
         $params["filter"] = ["EMAIL" => $email];
 
-        $response = $this->connector->buildQuery( $params, $this->rest );
+        $response = $this->connector->buildQuery( $params, $this->list );
 
         return $response['result'];
     }
@@ -69,10 +75,16 @@ class Contact implements B24Object {
 
             $userId = (int) $result[0]["ID"];
 
+
             return $userId;
         }
 
         // Or add contact
+        $parser = new \Parser\Settings ();
+
+        $uf = $this->getUF();
+        $parser->setUser($data);
+        $data = $parser->parseFields($data["contact"], $data);
 
         foreach (self::$arrContactFields as $key => $item ) {
 
@@ -80,7 +92,7 @@ class Contact implements B24Object {
 
         }
 
-        $params["fields"]['STATUS_ID']              = self::statusId;
+        $params["fields"]['STATUS_ID']              = self::STATUS_ID;
         $params["fields"]['PHONE']                  = [[
             "VALUE" => $data['billing_phone'][0],
             "VALUE_TYPE" => "WORK"
@@ -91,13 +103,26 @@ class Contact implements B24Object {
             "VALUE_TYPE" => "WORK"
         ]];
 
-        $restQuery = "crm.contact.add.json";
+        $params = $this->map ( $uf, $data, $params);
+
         $params["auth"]  = $this->connector->accessToken;
 
-        $response = $this->connector->buildQuery( $params, $restQuery );
+        $response = $this->connector->buildQuery( $params, $this->add );
 
         return $response['result']; //return contact id
 
+    }
+
+    /**
+     * getUF - get contact user fields from B24
+     * @return $response['result']
+     */
+    public function getUF () {
+
+        $params["auth"]     = $this->connector->accessToken;
+        $response           = $this->connector->buildQuery( $params, $this->uf );
+
+        return $response['result']; //return contact id
     }
 
 }
