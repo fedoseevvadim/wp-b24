@@ -24,4 +24,22 @@ class Struct {
         return get_option($name);
     }
 
+
+    // remove nested array from WP_data
+    public function removeNestedArray ( array $array ): array {
+
+        foreach ( $array as $key => $item ) {
+
+            if ( is_array($array[$key]) ) {
+                $arr[$key] = $array[$key][0];
+            } else {
+                $arr[$key] = $array[$key];
+            }
+
+        }
+
+        return $arr;
+
+    }
+
 }

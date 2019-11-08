@@ -30,6 +30,11 @@ final class Contact implements B24Object {
 
     ];
 
+    public static $arrGenderRU = [
+        "Мужчина",
+        "Женщина"
+    ];
+
     public function __construct( $connector ) {
 
         if ( empty ( $connector ) ) {
@@ -58,6 +63,7 @@ final class Contact implements B24Object {
         return $response['result'];
     }
 
+    // Here is function only working with wordpress data
     /**
     * addLead - добавляет контакт в базу
     * @param   array $data - array of data
@@ -69,12 +75,13 @@ final class Contact implements B24Object {
             throw new \InvalidArgumentException('Data is empty');
         }
 
-        $result = $this->get( $data['billing_email'][0] );
+        $data = \B24\Struct::removeNestedArray($data);
+
+        $result = $this->get( $data['billing_email'] );
 
         if ( is_array( $result) AND count($result) > 0 ) {
 
             $userId = (int) $result[0]["ID"];
-
 
             return $userId;
         }
@@ -88,20 +95,35 @@ final class Contact implements B24Object {
 
         foreach (self::$arrContactFields as $key => $item ) {
 
-            $params["fields"][$item[1]] = $data[$item[0]][0];
+            $params["fields"][$item[1]] = $data[$item[0]];
 
         }
 
         $params["fields"]['STATUS_ID']              = self::STATUS_ID;
         $params["fields"]['PHONE']                  = [[
-            "VALUE" => $data['billing_phone'][0],
+            "VALUE" => $data['billing_phone'],
             "VALUE_TYPE" => "WORK"
         ]];
 
         $params["fields"]['EMAIL']                  = [[
-            "VALUE" => $data['billing_email'][0],
+            "VALUE" => $data['billing_email'],
             "VALUE_TYPE" => "WORK"
         ]];
+
+
+        // Try to find id gender by typem
+        foreach ( $data as $key => $elem) {
+
+            if ( $elem === "typem" ) {
+
+                if ( $data["typem"] === "men" ) {
+                    $data[$key] = self::$arrGenderRU[0];
+                } else {
+                    $data[$key] = self::$arrGenderRU[1];
+                }
+            }
+
+        }
 
         $params = $this->map ( $uf, $data, $params);
 
@@ -109,9 +131,10 @@ final class Contact implements B24Object {
 
         $response = $this->connector->buildQuery( $params, $this->add );
 
-        return $response['result']; //return contact id
+        return $response['result'];
 
     }
+
 
     /**
      * getUF - get contact user fields from B24
@@ -124,5 +147,6 @@ final class Contact implements B24Object {
 
         return $response['result']; //return contact id
     }
+
 
 }

@@ -11,26 +11,26 @@ class Settings {
     public $user;
 
     /**
-    * setTerms - set var terms
-    * @param   string terms
-    *
-    */
+     * setTerms - set var terms
+     * @param   string terms
+     *
+     */
     public function setTerms( array $terms ) {
 
         if ( empty ( $terms ) ) {
             throw new \InvalidArgumentException('No terms has past');
         }
 
-        $this->terms = $terms;
+        $this->terms = \B24\Struct::removeNestedArray( $terms );
 
     }
 
     /**
-    * setOrder - set var order
-    * @param   array
-    *
-    */
-    public function setOrder( array $order ) {
+     * setOrder - set var order
+     * @param   array
+     *
+     */
+    public function setOrder( $order ) {
 
         if ( empty ( $order ) ) {
             throw new \InvalidArgumentException('No order has past');
@@ -42,17 +42,17 @@ class Settings {
 
 
     /**
-    * setPostOrder - set var post Order
-    * @param   array
-    *
-    */
+     * setPostOrder - set var post Order
+     * @param   array
+     *
+     */
     public function setPostOrder( array $postOrder ) {
 
         if ( empty ( $postOrder ) ) {
             throw new \InvalidArgumentException('No postOrder has past');
         }
 
-        $this->postOrder = $postOrder;
+        $this->postOrder = \B24\Struct::removeNestedArray( $postOrder );
 
     }
 
@@ -83,20 +83,22 @@ class Settings {
 
     private function parseTwoVal ( $arrElem, &$arrData ) {
 
-        $arrData[$arrElem[0]] = $this->terms[$arrElem[1]][0];
+        extract($arrElem); // https://www.php.net/manual/en/function.extract.php
 
-        switch ($arrElem[1]) {
+        $arrData[$key] = $this->terms[$value];
+
+        switch ( $value ) {
 
             // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
-            case "TERMS":
-                $this->parseTerms();
-                $arrData[$arrElem[0]] = $this->terms[$arrElem[2]][0];
-
-                break;
+//            case "TERMS":
+//                $this->parseTerms();
+//                $arrData[$arrElem[0]] = $this->terms[$arrElem[2]][0];
+//
+//                break;
 
             default:
 
-                $arrData[$arrElem[0]] = $arrElem[1];
+                $arrData[$key] = $value;
                 break;
         }
 
@@ -104,41 +106,36 @@ class Settings {
     }
 
 
-    private function parseThreeVal ($arrElem, &$arrData) {
+    private function parseThreeVal ( $arrElem, &$arrData ) {
 
         //$this->checkAdditionalValues();
+        extract( $arrElem ); // https://www.php.net/manual/en/function.extract.php
 
-        switch ($arrElem[1]) {
+        switch ( $object ) {
 
             // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
             case "TERMS":
 
-                $arrData[$arrElem[0]] = $this->terms[$arrElem[2]][0];
+                $arrData[$key] = $this->terms[$value];
 
                 break;
 
             // UF_CRM_1569421314=>ORDER=>order_item_name
             case "ORDER":
 
-                $itemID = $arrElem[2];
-                $value = $this->order[0]->$itemID;
-                $arrData[$arrElem[0]] = $value;
+                $arrData[$key] = $this->order->$value;
 
                 break;
 
             case "USER":
 
-                $itemID = $arrElem[2];
-                $value = $this->user[$itemID][0];
-                $arrData[$arrElem[0]] = $value;
+                $arrData[$key] = $this->user[$value];
 
                 break;
 
             case "POST_ORDER":
 
-                $itemID = $arrElem[2];
-                $value = $this->postOrder[$itemID][0];
-                $arrData[$arrElem[0]] = $value;
+                $arrData[$key] = $this->postOrder[$value];
 
                 break;
 
@@ -170,12 +167,21 @@ class Settings {
 
                 // OPPORTUNITY=>_price
                 if ( count( $arrElem ) === 2 ) {
-                    $this->parseTwoVal( $arrElem, $arrData );
+
+                    $array["key"]   = $arrElem[0];
+                    $array["value"] = $arrElem[1];
+
+                    $this->parseTwoVal( $array, $arrData );
                 }
 
                 // UF_CRM_1569421314=>ORDER=>order_item_name
                 if ( count( $arrElem) === 3 ) {
-                    $this->parseThreeVal( $arrElem, $arrData );
+
+                    $array["key"]       = $arrElem[0];
+                    $array["object"]    = $arrElem[1];
+                    $array["value"]     = $arrElem[2];
+
+                    $this->parseThreeVal( $array, $arrData );
                 }
             }
         }

@@ -13,12 +13,13 @@ class WPForm {
         ["Логин пользователя",      "login",        "text",     "User login"],
         ["Пароль пользователя",     "password",     "text",     "User password"],
         ["Название сделки",         "deal_name",    "text",     "Deal name"],
-        ["Client ID",               "client_id",    "text",     "Client ID"],
-        ["Client Secret Key",       "client_secret","text",     "Client Secret Key"],
-        ["Наименование источника",  "source_name",  "text",     "название сайта (например)"],
-        ["Связь по полям",          "field_link",   "textarea", "поле битрикс []->[] "],
-        ["Направление сделок",      "lead_terms",   "textarea", "Связь по направлениям сделок [Категория товара]->[ID Направления в Б24]"],
-        ["Поля Контакта",           "contact",      "textarea", "Связь по полям у контакта [ID B24]->[Значение]"]
+        ["Client ID",                               "client_id",    "text",     "Client ID"],
+        ["Client Secret Key",                       "client_secret","text",     "Client Secret Key"],
+        ["Наименование источника",                  "source_name",  "text",     "название сайта (например)"],
+        ["Связь по полям",                          "field_link",   "textarea", "поле битрикс []->[] "],
+        ["Направление сделок",                      "lead_terms",   "textarea", "Связь по направлениям сделок [Категория товара]->[ID Направления в Б24]"],
+        ["Поля Контакта",                           "contact",      "textarea", "Связь по полям у контакта [ID B24]->[Значение]"],
+        ["Поля при создании контакта",              "contact_create",      "textarea", "Связь по полям у контакта [ID B24]->[Значение]"]
     ];
 
     /*

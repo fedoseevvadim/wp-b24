@@ -31,6 +31,8 @@ class B24Plugin {
 
         add_action('admin_menu', 'b24_add_page');
         add_action('woocommerce_order_status_completed', 'b24_createLeadWhenCompleted'); // Хук статуса заказа = "Выполнен"
+        add_action('wpcf7_submit', 'wpcf7_submit', 10, 2 );
+        add_action("wpcf7_before_send_mail", "wpcf7_do_something_else");
 
     }
 
@@ -76,6 +78,8 @@ register_deactivation_hook( __FILE__, [$b24Plugin, 'deactivate']);
 );
 
 
+
+// Save options
 $http_post = ( 'POST' == $_SERVER['REQUEST_METHOD'] );
 
 if ( $http_post === true ) {
@@ -127,6 +131,7 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
         if ( is_array( $ORDER ) ) {
 
             $iTitle = 1;
+            $i = 0;
 
             foreach ( $ORDER as $orderItem ) {
 
@@ -136,9 +141,9 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
                 $arrORDER_TERMS     = get_post_meta($product_id);
                 $arrPOST_TERMS      = wp_get_object_terms($product_id, 'product_cat');
 
-                $arrPOST_ORDER["_quantity"][0] = $item->get_quantity();
-                $arrPOST_ORDER["_total"][0] = $item->get_subtotal();
-                $arrPOST_ORDER["_comments"][0] = \WC\Order::rsp_get_wc_order_notes($order_id);
+                $arrPOST_ORDER["_quantity"][0]  = $item->get_quantity();
+                $arrPOST_ORDER["_total"][0]     = $item->get_subtotal();
+                $arrPOST_ORDER["_comments"][0]  = \WC\Order::rsp_get_wc_order_notes( $order_id );
 
                 $categoryId = $B24Terms->getTerm( $arrPOST_TERMS[0]->term_id );
 
@@ -149,9 +154,14 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
 
                     // Before we start, let's check connection to server
                     $bCheckConnection = $B24->checkConnection($arrOptions["host"]);
+                    $parser->setOrder($ORDER[$i]);
+                    $parser->setPostOrder($arrPOST_ORDER);
+                    $parser->setTerms($arrORDER_TERMS);
 
                     if ($B24->accessToken) {
                         $arrUser["contact"] = $arrOptions["contact"];
+                        $arrUser["typem"]   = $arrPOST_ORDER["typem"][0];
+
                         $contactID          = $b24Contact->set( $arrUser );
                     }
 
@@ -166,13 +176,9 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
                         // Standard fields
                         $arrData["CATEGORY_ID"] = $categoryId;
                         $arrData["CONTACT_ID"]  = $contactID;
-                        $arrData["TITLE"]       = $arrOptions["deal_name"] . " #" . $ORDER[0]->order_id . $title;
+                        $arrData["TITLE"]       = $arrOptions["deal_name"] . " #" . $ORDER[$i]->order_id . $title;
 
                         $paymentMethod = strtolower($arrPOST_ORDER["_payment_method"][0]);
-
-                        $parser->setOrder($ORDER);
-                        $parser->setPostOrder($arrPOST_ORDER);
-                        $parser->setTerms($arrORDER_TERMS);
 
                         $arrData = $parser->parseFields(
                             $arrOptions["field_link"],
@@ -197,6 +203,7 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
 
                 }
 
+                $i++;
                 $iTitle++;
 
             }
@@ -207,6 +214,15 @@ function b24_createLeadWhenCompleted ($order_id, $debug = '') {
 
 }
 
+function wpcf7_do_something_else( $cf7 ) {
+
+    $submission = WPCF7_Submission::get_instance();
+
+    if ( $submission ) {
+        $posted_data = $submission->get_posted_data();
+        var_dump( $posted_data );
+    }
+}
 
 
 function b24_toplevel_page () {
@@ -215,7 +231,83 @@ function b24_toplevel_page () {
 
 }
 
+function array_search_partial( array $arr, string $keyword): int {
 
+    foreach ( $arr as $index => $string ) {
+
+        if ( strpos ( $string, $keyword ) !== FALSE )
+            return $index;
+    }
+
+}
+
+
+// Connect all forms to b24
+function wpcf7_submit( $result ) {
+
+    $prefix     = '_wpcf7';
+    //$status     = 'mail_sent';
+    $arrData    = [];
+
+    //if ( $result["status"] === $status ) {
+
+        if ( isset ( $GLOBALS["_POST"] ) ) {
+
+            $arrPost = (array) $GLOBALS["_POST"];
+            $arrKeys = array_keys( $arrPost );
+
+            $searchPrefix = array_search( $prefix, $arrKeys );
+
+            if ( $searchPrefix !== false ) {
+
+                // try to find in post results from submitted form
+                $keyName = array_search_partial($arrKeys, "name");
+                $keyEmail = array_search_partial($arrKeys, "email");
+                $keyMenu = array_search_partial($arrKeys, "menu");
+
+                $b24Form    = new WPForm();
+                $arrOptions = $b24Form->getOptions();
+
+                $B24 = new \B24\Connector (
+                    $arrOptions["host"],
+                    $arrOptions["login"],
+                    $arrOptions["password"],
+                    $arrOptions["client_id"],
+                    $arrOptions["client_secret"]
+                );
+
+                $b24Contact = new \B24\Contact($B24);
+
+                // map fileds
+                if ( $keyName !== false ) {
+                    $arrData["first_name"][0]    = $arrPost[$arrKeys[$keyName]];
+                }
+
+                if ( $keyEmail !== false ) {
+                    $arrData['billing_email'][0] = $arrPost[$arrKeys[$keyEmail]];
+                }
+
+                if ( $keyMenu !== false ) {
+
+                    $arrData["typem"][0] = "";
+
+                    if ( $arrPost[$arrKeys[$keyMenu]] === B24\Contact::$arrGenderRU[0] ) {
+                        $arrData["typem"][0] = "men";
+                    }
+
+                }
+
+                $arrData["contact"] = $arrOptions["contact_create"];
+                $contactID = $b24Contact->set( $arrData );
+
+            }
+
+        }
+
+    //}
+
+
+}
 
 ?>
 
