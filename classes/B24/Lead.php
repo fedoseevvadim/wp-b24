@@ -4,40 +4,44 @@
 namespace B24;
 
 
-final class Lead implements B24Object {
+final class Lead implements B24Object
+{
 
-    use MapFields;
+	use MapFields;
 
-    public $rest = "crm.lead.add.json";
+	public $rest = "crm.lead.add.json";
 
-    private $connector;
+	private $connector;
 
-    const STATUS_ID = "NEW";
-    const TITLE     = "Новый заказ с сайта"; // Default name
+	const STATUS_ID = "NEW";
+	const TITLE = "Новый заказ с сайта"; // Default name
 
-    public function __construct( $connector ) {
+	public function __construct ( $connector )
+	{
 
-        if ( empty ( $connector ) ) {
-            throw new \InvalidArgumentException('Connector to B24 must me set');
-        }
+		if ( empty ( $connector ) ) {
+			throw new \InvalidArgumentException( 'Connector to B24 must me set' );
+		}
 
-        $this->connector = $connector;
-    }
+		$this->connector = $connector;
+	}
 
-    public function get( $item ) {
+	public function get ( $item )
+	{
 
-        if ( empty ( $item ) ) {
-            throw new \InvalidArgumentException('Item is empty');
-        }
+		if ( empty ( $item ) ) {
+			throw new \InvalidArgumentException( 'Item is empty' );
+		}
 
-    }
+	}
 
-    public function set ( array $data ) {
+	public function set ( array $data )
+	{
 
-        if ( empty ( $data ) ) {
-            throw new \InvalidArgumentException('Data is empty');
-        }
+		if ( empty ( $data ) ) {
+			throw new \InvalidArgumentException( 'Data is empty' );
+		}
 
-    }
+	}
 
 }

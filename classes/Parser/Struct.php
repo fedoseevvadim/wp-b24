@@ -3,10 +3,11 @@
 
 namespace Parser;
 
-class Struct {
+class Struct
+{
 
-    const DELIMETER             = "=>";
-    const DELIMETER_FOR_LINES   = "\r\n";
-    const PREFIX                = "UF_CRM_";
+	const DELIMETER = "=>";
+	const DELIMETER_FOR_LINES = "\r\n";
+	const PREFIX = "UF_CRM_";
 
 }

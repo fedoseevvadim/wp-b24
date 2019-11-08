@@ -3,210 +3,223 @@
 namespace Parser;
 
 
-class Settings {
+class Settings
+{
 
-    public $terms;
-    public $order;
-    public $postOrder;
-    public $user;
+	public $terms;
+	public $order;
+	public $postOrder;
+	public $user;
 
-    /**
-     * setTerms - set var terms
-     * @param   string terms
-     *
-     */
-    public function setTerms( array $terms ) {
+	/**
+	 * setTerms - set var terms
+	 *
+	 * @param string terms
+	 *
+	 */
+	public function setTerms ( array $terms )
+	{
 
-        if ( empty ( $terms ) ) {
-            throw new \InvalidArgumentException('No terms has past');
-        }
+		if ( empty ( $terms ) ) {
+			throw new \InvalidArgumentException( 'No terms has past' );
+		}
 
-        $this->terms = \B24\Struct::removeNestedArray( $terms );
+		$this->terms = \B24\Struct::removeNestedArray ( $terms );
 
-    }
+	}
 
-    /**
-     * setOrder - set var order
-     * @param   array
-     *
-     */
-    public function setOrder( $order ) {
+	/**
+	 * setOrder - set var order
+	 *
+	 * @param array
+	 *
+	 */
+	public function setOrder ( $order )
+	{
 
-        if ( empty ( $order ) ) {
-            throw new \InvalidArgumentException('No order has past');
-        }
+		if ( empty ( $order ) ) {
+			throw new \InvalidArgumentException( 'No order has past' );
+		}
 
-        $this->order = $order;
+		$this->order = $order;
 
-    }
-
-
-    /**
-     * setPostOrder - set var post Order
-     * @param   array
-     *
-     */
-    public function setPostOrder( array $postOrder ) {
-
-        if ( empty ( $postOrder ) ) {
-            throw new \InvalidArgumentException('No postOrder has past');
-        }
-
-        $this->postOrder = \B24\Struct::removeNestedArray( $postOrder );
-
-    }
+	}
 
 
-    /**
-     * setPostOrder - set var post Order
-     * @param   array
-     *
-     */
-    public function setUser( array $user ) {
+	/**
+	 * setPostOrder - set var post Order
+	 *
+	 * @param array
+	 *
+	 */
+	public function setPostOrder ( array $postOrder )
+	{
 
-        if ( empty ( $user ) ) {
-            throw new \InvalidArgumentException('User date were not past');
-        }
+		if ( empty ( $postOrder ) ) {
+			throw new \InvalidArgumentException( 'No postOrder has past' );
+		}
 
-        $this->user = $user;
+		$this->postOrder = \B24\Struct::removeNestedArray ( $postOrder );
 
-    }
-
-
-
-    public function getArray( $value ):array {
-
-        return explode(Struct::DELIMETER, $value);
-
-    }
+	}
 
 
-    private function parseTwoVal ( $arrElem, &$arrData ) {
+	/**
+	 * setPostOrder - set var post Order
+	 *
+	 * @param array
+	 *
+	 */
+	public function setUser ( array $user )
+	{
 
-        extract($arrElem); // https://www.php.net/manual/en/function.extract.php
+		if ( empty ( $user ) ) {
+			throw new \InvalidArgumentException( 'User date were not past' );
+		}
 
-        $arrData[$key] = $this->terms[$value];
+		$this->user = $user;
 
-        switch ( $value ) {
+	}
 
-            // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
+
+	public function getArray ( $value ): array
+	{
+
+		return explode ( Struct::DELIMETER, $value );
+
+	}
+
+
+	private function parseTwoVal ( $arrElem, &$arrData )
+	{
+
+		extract ( $arrElem ); // https://www.php.net/manual/en/function.extract.php
+
+		$arrData[$key] = $this->terms[$value];
+
+		switch ( $value ) {
+
+			// UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
 //            case "TERMS":
 //                $this->parseTerms();
 //                $arrData[$arrElem[0]] = $this->terms[$arrElem[2]][0];
 //
 //                break;
 
-            default:
+			default:
 
-                $arrData[$key] = $value;
-                break;
-        }
-
-
-    }
+				$arrData[$key] = $value;
+				break;
+		}
 
 
-    private function parseThreeVal ( $arrElem, &$arrData ) {
-
-        //$this->checkAdditionalValues();
-        extract( $arrElem ); // https://www.php.net/manual/en/function.extract.php
-
-        switch ( $object ) {
-
-            // UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
-            case "TERMS":
-
-                $arrData[$key] = $this->terms[$value];
-
-                break;
-
-            // UF_CRM_1569421314=>ORDER=>order_item_name
-            case "ORDER":
-
-                $arrData[$key] = $this->order->$value;
-
-                break;
-
-            case "USER":
-
-                $arrData[$key] = $this->user[$value];
-
-                break;
-
-            case "POST_ORDER":
-
-                $arrData[$key] = $this->postOrder[$value];
-
-                break;
-
-        }
-
-    }
+	}
 
 
-    public function parseFields ( string $fields, array $arrData ) : array {
+	private function parseThreeVal ( $arrElem, &$arrData )
+	{
 
-        if ( empty ( $fields ) ) {
-            throw new \InvalidArgumentException('Fields cannot be empty');
-        }
+		//$this->checkAdditionalValues();
+		extract ( $arrElem ); // https://www.php.net/manual/en/function.extract.php
 
-        if ( empty ( $arrData ) ) {
-            throw new \InvalidArgumentException('ArrData cannot be empty');
-        }
+		switch ( $object ) {
 
-        $arrayOfLines = explode(
-            Struct::DELIMETER_FOR_LINES,
-            $fields
-        );
+			// UF_CRM_1569421180=>TERMS=>тип_мероприятия - пример из настроек
+			case "TERMS":
 
-        if ( is_array( $arrayOfLines ))  {
+				$arrData[$key] = $this->terms[$value];
 
-            foreach ($arrayOfLines as $value) {
+				break;
 
-                $arrElem = $this->getArray( $value );
+			// UF_CRM_1569421314=>ORDER=>order_item_name
+			case "ORDER":
 
-                // OPPORTUNITY=>_price
-                if ( count( $arrElem ) === 2 ) {
+				$arrData[$key] = $this->order->$value;
 
-                    $array["key"]   = $arrElem[0];
-                    $array["value"] = $arrElem[1];
+				break;
 
-                    $this->parseTwoVal( $array, $arrData );
-                }
+			case "USER":
 
-                // UF_CRM_1569421314=>ORDER=>order_item_name
-                if ( count( $arrElem) === 3 ) {
+				$arrData[$key] = $this->user[$value];
 
-                    $array["key"]       = $arrElem[0];
-                    $array["object"]    = $arrElem[1];
-                    $array["value"]     = $arrElem[2];
+				break;
 
-                    $this->parseThreeVal( $array, $arrData );
-                }
-            }
-        }
+			case "POST_ORDER":
 
-        return $arrData;
+				$arrData[$key] = $this->postOrder[$value];
 
-    }
+				break;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\
-    // CHECK DATA FUNCTIONS
+		}
 
-    private function checkAdditionalValues() {
+	}
 
-        if ( empty ( $this->terms ) ) {
-            throw new \RuntimeException('No Terms were past to function setTerms()');
-        }
 
-        if ( empty ( $this->order ) ) {
-            throw new \RuntimeException('ORDER was no past to function setOrder()');
-        }
+	public function parseFields ( string $fields, array $arrData ): array
+	{
 
-        if ( empty ( $this->postOrder ) ) {
-            throw new \RuntimeException('POST ORDER was no past to function setPostOrder()');
-        }
+		if ( empty ( $fields ) ) {
+			throw new \InvalidArgumentException( 'Fields cannot be empty' );
+		}
 
-    }
+		if ( empty ( $arrData ) ) {
+			throw new \InvalidArgumentException( 'ArrData cannot be empty' );
+		}
+
+		$arrayOfLines = explode (
+			Struct::DELIMETER_FOR_LINES,
+			$fields
+		);
+
+		if ( is_array ( $arrayOfLines ) ) {
+
+			foreach ( $arrayOfLines as $value ) {
+
+				$arrElem = $this->getArray ( $value );
+
+				// OPPORTUNITY=>_price
+				if ( count ( $arrElem ) === 2 ) {
+
+					$array["key"] = $arrElem[0];
+					$array["value"] = $arrElem[1];
+
+					$this->parseTwoVal ( $array, $arrData );
+				}
+
+				// UF_CRM_1569421314=>ORDER=>order_item_name
+				if ( count ( $arrElem ) === 3 ) {
+
+					$array["key"] = $arrElem[0];
+					$array["object"] = $arrElem[1];
+					$array["value"] = $arrElem[2];
+
+					$this->parseThreeVal ( $array, $arrData );
+				}
+			}
+		}
+
+		return $arrData;
+
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\
+	// CHECK DATA FUNCTIONS
+
+	private function checkAdditionalValues ()
+	{
+
+		if ( empty ( $this->terms ) ) {
+			throw new \RuntimeException( 'No Terms were past to function setTerms()' );
+		}
+
+		if ( empty ( $this->order ) ) {
+			throw new \RuntimeException( 'ORDER was no past to function setOrder()' );
+		}
+
+		if ( empty ( $this->postOrder ) ) {
+			throw new \RuntimeException( 'POST ORDER was no past to function setPostOrder()' );
+		}
+
+	}
 
 }

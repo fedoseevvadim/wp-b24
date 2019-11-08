@@ -2,106 +2,109 @@
 
 namespace B24;
 
-class WPForm {
+class WPForm
+{
 
-    const PATH = "/wp-content/plugins/b24-plugin/tpl/";
+	const PATH = "/wp-content/plugins/b24-plugin/tpl/";
 
-    // Settings
-    private static $arrForm = [
+	// Settings
+	private static $arrForm = [
 
-        ["Хост системы",            "host",         "text",     "yourdomain.bitrix24.ru"],
-        ["Логин пользователя",      "login",        "text",     "User login"],
-        ["Пароль пользователя",     "password",     "text",     "User password"],
-        ["Название сделки",         "deal_name",    "text",     "Deal name"],
-        ["Client ID",                               "client_id",    "text",     "Client ID"],
-        ["Client Secret Key",                       "client_secret","text",     "Client Secret Key"],
-        ["Наименование источника",                  "source_name",  "text",     "название сайта (например)"],
-        ["Связь по полям",                          "field_link",   "textarea", "поле битрикс []->[] "],
-        ["Направление сделок",                      "lead_terms",   "textarea", "Связь по направлениям сделок [Категория товара]->[ID Направления в Б24]"],
-        ["Поля Контакта",                           "contact",      "textarea", "Связь по полям у контакта [ID B24]->[Значение]"],
-        ["Поля при создании контакта",              "contact_create",      "textarea", "Связь по полям у контакта [ID B24]->[Значение]"]
-    ];
+		[ "Хост системы", "host", "text", "yourdomain.bitrix24.ru" ],
+		[ "Логин пользователя", "login", "text", "User login" ],
+		[ "Пароль пользователя", "password", "text", "User password" ],
+		[ "Название сделки", "deal_name", "text", "Deal name" ],
+		[ "Client ID", "client_id", "text", "Client ID" ],
+		[ "Client Secret Key", "client_secret", "text", "Client Secret Key" ],
+		[ "Наименование источника", "source_name", "text", "название сайта (например)" ],
+		[ "Связь по полям", "field_link", "textarea", "поле битрикс []->[] " ],
+		[ "Направление сделок", "lead_terms", "textarea", "Связь по направлениям сделок [Категория товара]->[ID Направления в Б24]" ],
+		[ "Поля Контакта", "contact", "textarea", "Связь по полям у контакта [ID B24]->[Значение]" ],
+		[ "Поля при создании контакта", "contact_create", "textarea", "Связь по полям у контакта [ID B24]->[Значение]" ]
+	];
 
-    /*
-    * get template
-    */
-    private function getTpl ($type) {
+	/*
+	* get template
+	*/
+	private function getTpl ( $type )
+	{
 
-        switch ( $type ) {
+		switch ( $type ) {
 
-            case "text":
+			case "text":
 
-                $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::PATH."input.html");
+				$tpl_input = file_get_contents ( $_SERVER["DOCUMENT_ROOT"] . self::PATH . "input.html" );
 
-                break;
+				break;
 
-            case "textarea":
+			case "textarea":
 
-                $tpl_input = file_get_contents($_SERVER["DOCUMENT_ROOT"].self::PATH."textarea.html");
+				$tpl_input = file_get_contents ( $_SERVER["DOCUMENT_ROOT"] . self::PATH . "textarea.html" );
 
-                break;
-        }
-
-
-
-        return $tpl_input;
-    }
+				break;
+		}
 
 
-    /*
-    * replace values in template form
-    */
-    public function buildForm ( array $arrOptions ) {
+		return $tpl_input;
+	}
 
-        $form = "";
 
-        foreach (self::$arrForm as $key => $item ) {
+	/*
+	* replace values in template form
+	*/
+	public function buildForm ( array $arrOptions )
+	{
 
-            if ( $item[2] === "text" ) {
+		$form = "";
 
-                    $tpl = $this->getTpl("text");
+		foreach ( self::$arrForm as $key => $item ) {
 
-                    $tpl = str_replace("[NAME]",            $item[0],                   $tpl);
-                    $tpl = str_replace("[VAR_NAME]",        $item[1],                   $tpl);
-                    $tpl = str_replace("[VALUE]",           $arrOptions[$item[1]],      $tpl);
-                    $tpl = str_replace("[PLACE_HOLDER]",    $item[3],                   $tpl);
-                    $tpl = str_replace("[TYPE]",            $item[2],                   $tpl);
+			if ( $item[2] === "text" ) {
 
-                    $form .= $tpl;
+				$tpl = $this->getTpl ( "text" );
 
-            }
+				$tpl = str_replace ( "[NAME]", $item[0], $tpl );
+				$tpl = str_replace ( "[VAR_NAME]", $item[1], $tpl );
+				$tpl = str_replace ( "[VALUE]", $arrOptions[$item[1]], $tpl );
+				$tpl = str_replace ( "[PLACE_HOLDER]", $item[3], $tpl );
+				$tpl = str_replace ( "[TYPE]", $item[2], $tpl );
 
-            if ( $item[2] === "textarea" ) {
+				$form .= $tpl;
 
-                $tpl = $this->getTpl("textarea");
+			}
 
-                $tpl = str_replace("[NAME]",            $item[0],                   $tpl);
-                $tpl = str_replace("[VAR_NAME]",        $item[1],                   $tpl);
-                $tpl = str_replace("[VALUE]",           $arrOptions[$item[1]],      $tpl);
+			if ( $item[2] === "textarea" ) {
 
-                $form .= $tpl;
-            }
-        }
+				$tpl = $this->getTpl ( "textarea" );
 
-        return $form;
+				$tpl = str_replace ( "[NAME]", $item[0], $tpl );
+				$tpl = str_replace ( "[VAR_NAME]", $item[1], $tpl );
+				$tpl = str_replace ( "[VALUE]", $arrOptions[$item[1]], $tpl );
 
-    }
+				$form .= $tpl;
+			}
+		}
 
-    /*
-    * get all options
-    */
-    public function getOptions ():array {
+		return $form;
 
-        $array = [];
+	}
 
-        $arrElements = array_column(self::$arrForm, 1);
+	/*
+	* get all options
+	*/
+	public function getOptions (): array
+	{
 
-        foreach ( $arrElements as $elem ) {
-            $array[$elem] = get_option($elem);
-        }
+		$array = [];
 
-        return $array;
+		$arrElements = array_column ( self::$arrForm, 1 );
 
-    }
+		foreach ( $arrElements as $elem ) {
+			$array[$elem] = get_option ( $elem );
+		}
+
+		return $array;
+
+	}
 
 }

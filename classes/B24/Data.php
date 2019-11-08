@@ -2,39 +2,43 @@
 
 namespace B24;
 
-class Data  {
+class Data
+{
 
-    /**
-    * getPaymentID - добавляет контакт в базу
-    * @param   string $paymentMethod
-    * @param   array $arrUserFields
-    * @return $response
-    */
-    function getPaymentID ( $paymentMethod, $arrUserFields ): array {
+	/**
+	 * getPaymentID - добавляет контакт в базу
+	 *
+	 * @param string $paymentMethod
+	 * @param array  $arrUserFields
+	 *
+	 * @return $response
+	 */
+	function getPaymentID ( $paymentMethod, $arrUserFields ): array
+	{
 
-        $ID = 0;
+		$ID = 0;
 
-        foreach ( $arrUserFields as $field ) {
+		foreach ( $arrUserFields as $field ) {
 
-            if ( $field["USER_TYPE_ID"] === "enumeration" ) {
+			if ( $field["USER_TYPE_ID"] === "enumeration" ) {
 
-                foreach ( $field["LIST"] as $list ) {
+				foreach ( $field["LIST"] as $list ) {
 
-                    $value  = strtolower($list["VALUE"]);
-                    $pos    = strpos($value, $paymentMethod);
+					$value = strtolower ( $list["VALUE"] );
+					$pos = strpos ( $value, $paymentMethod );
 
-                    if ( $pos !== false ) {
+					if ( $pos !== false ) {
 
-                        return [$field["FIELD_NAME"], $list["ID"]];
-                    }
+						return [ $field["FIELD_NAME"], $list["ID"] ];
+					}
 
-                }
+				}
 
-            }
-        }
+			}
+		}
 
 
-        return $ID;
+		return $ID;
 
-    }
+	}
 }
