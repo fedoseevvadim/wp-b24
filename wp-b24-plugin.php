@@ -34,7 +34,8 @@ class B24Plugin
 		add_action ( 'admin_menu', 'b24_add_page' );
 		add_action ( 'woocommerce_order_status_completed', 'b24_createLeadWhenCompleted' ); // Хук статуса заказа = "Выполнен"
 		add_action ( 'wpcf7_submit', 'wpcf7_submit', 10, 2 );
-		add_action ( "wpcf7_before_send_mail", "wpcf7_do_something_else" );
+		//add_action ( "wpcf7_before_send_mail", "wpcf7_do_something_else" );
+		add_action ( 'user_register', 'add_contact_b24', 10, 1 );
 
 	}
 
@@ -220,16 +221,16 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 
 }
 
-function wpcf7_do_something_else ( $cf7 )
-{
-
-	$submission = WPCF7_Submission::get_instance ();
-
-	if ( $submission ) {
-		$posted_data = $submission->get_posted_data ();
-		var_dump ( $posted_data );
-	}
-}
+//function wpcf7_do_something_else ( $cf7 )
+//{
+//
+//	$submission = WPCF7_Submission::get_instance ();
+//
+//	if ( $submission ) {
+//		$posted_data = $submission->get_posted_data ();
+//		var_dump ( $posted_data );
+//	}
+//}
 
 
 function b24_toplevel_page ()
@@ -250,6 +251,48 @@ function array_search_partial ( array $arr, string $keyword ): int
 
 }
 
+
+
+function add_contact_b24 ( $user_id )
+{
+
+	if ( $user_id ) {
+
+		$b24Form = new WPForm();
+
+		$arrOptions = $b24Form->getOptions ();
+
+		if ( (int) $arrOptions["reg_user"] === 1 ) {
+
+			$B24 = new \B24\Connector (
+				$arrOptions["host"],
+				$arrOptions["login"],
+				$arrOptions["password"],
+				$arrOptions["client_id"],
+				$arrOptions["client_secret"]
+			);
+
+			$b24Contact = new \B24\Contact( $B24 );
+
+			$arrUser = get_user_meta( $user_id );
+
+			$arrUserData = get_userdata ( $user_id );
+
+
+			if ( $B24->accessToken ) {
+
+				$arrUser['billing_email'] = $arrUserData->data->user_email;
+//				$arrUser["typem"] = $arrPOST_ORDER["typem"][0];
+				$arrUser["contact"] = $arrOptions["contact"];
+
+				$contactID = $b24Contact->set ( $arrUser );
+				echo $contactID;
+			}
+		}
+
+	}
+
+}
 
 // Connect all forms to b24
 function wpcf7_submit ( $result )
