@@ -147,6 +147,9 @@ final class Contact implements B24Object
 		$error = $response["error_description"];
 
 		if ( $error ) {
+			file_put_contents ($_SERVER["DOCUMENT_ROOT"]."/wp-content/plugins/b24-plugin/data/b24.log", $params);
+			file_put_contents ($_SERVER["DOCUMENT_ROOT"]."/wp-content/plugins/b24-plugin/data/b24.log", $error);
+
 			return 0;
 		} else {
 			return $response['result'];

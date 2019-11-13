@@ -21,7 +21,6 @@ Text Domain: b24-plugin
 //use Page;
 
 use B24\WPForm;
-use Page\SetupPage;
 
 defined ( 'ABSPATH' ) || exit;
 
@@ -256,6 +255,8 @@ function array_search_partial ( array $arr, string $keyword ): int
 function add_contact_b24 ( $user_id )
 {
 
+	//file_put_contents ($_SERVER["DOCUMENT_ROOT"]."/wp-content/plugins/b24-plugin/test.txt", "add_contact_b24");
+
 	if ( $user_id ) {
 
 		$b24Form = new WPForm();
@@ -276,17 +277,21 @@ function add_contact_b24 ( $user_id )
 
 			$arrUser = get_user_meta( $user_id );
 
-			$arrUserData = get_userdata ( $user_id );
+			$arrUser["first_name"][0]       = filter_input (INPUT_POST, 'first_name');
+			$arrUser["last_name"][0]        =  filter_input (INPUT_POST, 'last_name');
+			//$arrUser["billing_email"][0]    =  filter_input (INPUT_POST, 'billing_email');
+			$arrUser["typem"][0]               = filter_input (INPUT_POST, 'typem');
+			$arrUser["billing_phone"][0]    =  filter_input (INPUT_POST, 'phone');
 
+			$arrUserData = get_userdata ( $user_id );
 
 			if ( $B24->accessToken ) {
 
 				$arrUser['billing_email'] = $arrUserData->data->user_email;
 //				$arrUser["typem"] = $arrPOST_ORDER["typem"][0];
-				$arrUser["contact"] = $arrOptions["contact"];
+				$arrUser["contact"] = $arrOptions["contact_create"];
 
 				$contactID = $b24Contact->set ( $arrUser );
-				echo $contactID;
 			}
 		}
 
@@ -359,8 +364,4 @@ function wpcf7_submit ( $result )
 
 	//}
 
-
 }
-
-?>
-
