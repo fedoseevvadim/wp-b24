@@ -25,16 +25,26 @@ use Page\SetupPage;
 
 defined ( 'ABSPATH' ) || exit;
 
+
 class B24Plugin
 {
 
 	function __construct ()
 	{
 
-		add_action ( 'admin_menu', 'b24_add_page' );
+		add_action('admin_menu', function()  {
+			global  $funcAddPage;
+
+			add_menu_page ( 'Bitrix24', 'Bitrix24', 'manage_options', __FILE__, 'b24_toplevel_page' );
+		});
+
 		add_action ( 'woocommerce_order_status_completed', 'b24_createLeadWhenCompleted' ); // Хук статуса заказа = "Выполнен"
+
 		add_action ( 'wpcf7_submit', 'wpcf7_submit', 10, 2 );
-		add_action ( "wpcf7_before_send_mail", "wpcf7_do_something_else" );
+
+		//add_action ( "wpcf7_before_send_mail", "wpcf7_do_something_else" );
+
+		add_action ( 'user_register', 'add_contact_b24', 10, 1 );
 
 	}
 
@@ -98,10 +108,26 @@ if ( $http_post === true ) {
 
 }
 
-function b24_add_page ()
-{
-	add_menu_page ( 'Bitrix24', 'Bitrix24', 'manage_options', __FILE__, 'b24_toplevel_page' );
-}
+
+
+
+//${$funcAddPage} = function()  {
+//
+//	add_menu_page ( 'Bitrix24', 'Bitrix24', 'manage_options', __FILE__, 'b24_toplevel_page_ru' );
+//
+//};
+//
+//if(function_exists($funcAddPage)) {
+//	call_user_func($funcAddPage);
+//}
+
+
+//var_dump (${$funcAddPage});
+
+//function b24_add_page_ru ()
+//{
+//	add_menu_page ( 'Bitrix24', 'Bitrix24', 'manage_options', __FILE__, 'b24_toplevel_page_ru' );
+//}
 
 /**
  * @param mixed  $order_id
@@ -119,11 +145,11 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 		$arrOptions = $b24Form->getOptions ();
 
 		$B24 = new \B24\Connector (
-			$arrOptions["host"],
-			$arrOptions["login"],
-			$arrOptions["password"],
-			$arrOptions["client_id"],
-			$arrOptions["client_secret"]
+			$arrOptions["host" . WPForm::PREFIX],
+			$arrOptions["login" . WPForm::PREFIX],
+			$arrOptions["password" . WPForm::PREFIX],
+			$arrOptions["client_id" . WPForm::PREFIX],
+			$arrOptions["client_secret" . WPForm::PREFIX]
 		);
 
 		$b24Deal = new \B24\Deal( $B24 );
@@ -143,7 +169,7 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 
 				$item = new WC_Order_Item_Product( $orderItem->order_item_id );
 				$product_id = $item->get_product_id ();
-				$B24Terms = new \B24\Terms( $arrOptions["lead_terms"] );
+				$B24Terms = new \B24\Terms( $arrOptions["lead_terms" . WPForm::PREFIX ] );
 				$arrORDER_TERMS = get_post_meta ( $product_id );
 				$arrPOST_TERMS = wp_get_object_terms ( $product_id, 'product_cat' );
 
@@ -159,13 +185,13 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 					$arrUser = get_user_meta ( $id );
 
 					// Before we start, let's check connection to server
-					$bCheckConnection = $B24->checkConnection ( $arrOptions["host"] );
+					$bCheckConnection = $B24->checkConnection ( $arrOptions["host"] . WPForm::PREFIX);
 					$parser->setOrder ( $ORDER[$i] );
 					$parser->setPostOrder ( $arrPOST_ORDER );
 					$parser->setTerms ( $arrORDER_TERMS );
 
 					if ( $B24->accessToken ) {
-						$arrUser["contact"] = $arrOptions["contact"];
+						$arrUser["contact"] = $arrOptions["contact" . WPForm::PREFIX];
 						$arrUser["typem"] = $arrPOST_ORDER["typem"][0];
 
 						$contactID = $b24Contact->set ( $arrUser );
@@ -182,12 +208,12 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 						// Standard fields
 						$arrData["CATEGORY_ID"] = $categoryId;
 						$arrData["CONTACT_ID"] = $contactID;
-						$arrData["TITLE"] = $arrOptions["deal_name"] . " #" . $ORDER[$i]->order_id . $title;
+						$arrData["TITLE"] = $arrOptions["deal_name" . WPForm::PREFIX] . " #" . $ORDER[$i]->order_id . $title;
 
 						$paymentMethod = strtolower ( $arrPOST_ORDER["_payment_method"][0] );
 
 						$arrData = $parser->parseFields (
-							$arrOptions["field_link"],
+							$arrOptions["field_link" . WPForm::PREFIX ],
 							$arrData
 						);
 
@@ -220,16 +246,16 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 
 }
 
-function wpcf7_do_something_else ( $cf7 )
-{
-
-	$submission = WPCF7_Submission::get_instance ();
-
-	if ( $submission ) {
-		$posted_data = $submission->get_posted_data ();
-		var_dump ( $posted_data );
-	}
-}
+//function wpcf7_do_something_else ( $cf7 )
+//{
+//
+//	$submission = WPCF7_Submission::get_instance ();
+//
+//	if ( $submission ) {
+//		$posted_data = $submission->get_posted_data ();
+//		var_dump ( $posted_data );
+//	}
+//}
 
 
 function b24_toplevel_page ()
@@ -250,6 +276,41 @@ function array_search_partial ( array $arr, string $keyword ): int
 
 }
 
+
+
+function add_contact_b24 ( $user_id )
+{
+
+	if ( $user_id ) {
+
+		$b24Form = new WPForm();
+
+		$arrOptions = $b24Form->getOptions ();
+
+		if ( $arrOptions["reg_user" . WPForm::PREFIX ] === 1 ) {
+
+			$B24 = new \B24\Connector (
+				$arrOptions["host" . WPForm::PREFIX ],
+				$arrOptions["login" . WPForm::PREFIX ],
+				$arrOptions["password" . WPForm::PREFIX ],
+				$arrOptions["client_id" . WPForm::PREFIX ],
+				$arrOptions["client_secret" . WPForm::PREFIX ]
+			);
+
+			$b24Contact = new \B24\Contact( $B24 );
+
+			$arrUser = get_user_meta ( $user_id );
+
+			if ( $B24->accessToken ) {
+
+				$contactID = $b24Contact->set ( $arrUser );
+
+			}
+		}
+
+	}
+
+}
 
 // Connect all forms to b24
 function wpcf7_submit ( $result )
@@ -279,11 +340,11 @@ function wpcf7_submit ( $result )
 			$arrOptions = $b24Form->getOptions ();
 
 			$B24 = new \B24\Connector (
-				$arrOptions["host"],
-				$arrOptions["login"],
-				$arrOptions["password"],
-				$arrOptions["client_id"],
-				$arrOptions["client_secret"]
+				$arrOptions["host" . WPForm::PREFIX ],
+				$arrOptions["login" . WPForm::PREFIX],
+				$arrOptions["password" . WPForm::PREFIX],
+				$arrOptions["client_id" . WPForm::PREFIX ],
+				$arrOptions["client_secret" . WPForm::PREFIX ]
 			);
 
 			$b24Contact = new \B24\Contact( $B24 );
@@ -307,7 +368,7 @@ function wpcf7_submit ( $result )
 
 			}
 
-			$arrData["contact"] = $arrOptions["contact_create"];
+			$arrData["contact"] = $arrOptions["contact_create" . WPForm::PREFIX ];
 			$contactID = $b24Contact->set ( $arrData );
 
 		}
