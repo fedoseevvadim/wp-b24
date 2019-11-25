@@ -124,38 +124,23 @@ final class Contact implements B24Object
 		];
 
 		// Working with checkboxes from WEB FORM
-		//
-		// get settings
-		$arrLines = explode (
-			\Parser\Struct::DELIMETER_FOR_LINES,
-			$data["contact"]
-		);
-
-		foreach ( $arrLines as $line ) {
-
-			$arrOptionsElem[] = explode (
-				\Parser\Struct::DELIMETER,
-				$line
-			);
-
-		}
 
 		foreach ( $data["checkbox"] as $chk ) {
 
-			$elemName = strtolower ($chk);
-			$elemName = str_replace ("«", "", $elemName);
-			$elemName = str_replace ("»", "", $elemName);
+			// try to find by field name
+			$chk = str_replace ("«", "", $chk);
+			$chk = str_replace ("»", "", $chk);
 
-			foreach ( $arrOptionsElem as $elem ) {
+			foreach ( $uf as $field ) {
 
-				if ( strtolower($elem[1]) === $elemName ) {
+				$chkName = $field["SETTINGS"]["LABEL_CHECKBOX"];
+				$key = $field["FIELD_NAME"];
 
-					$data[$elem[0]] = 1;
-					break;
+				if ( strtolower ($chk) === strtolower($chkName) ) {
+					$data[$key] = 1;
 				}
 
 			}
-
 		}
 
 
