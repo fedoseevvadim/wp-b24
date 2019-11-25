@@ -127,22 +127,20 @@ final class Contact implements B24Object
 
 		foreach ( $data["checkbox"] as $chk ) {
 
-			// try to find by field name
-			$chk = str_replace ("«", "", $chk);
-			$chk = str_replace ("»", "", $chk);
+//			$chk = str_replace ("«", "", $chk);
+//			$chk = str_replace ("»", "", $chk);
 
+			// try to find by field name
 			foreach ( $uf as $field ) {
 
 				$chkName = $field["SETTINGS"]["LABEL_CHECKBOX"];
 				$key = $field["FIELD_NAME"];
 
-				if ( strtolower ($chk) === strtolower($chkName) ) {
+				if ( $chk === $chkName ) {
 					$data[$key] = 1;
 				}
-
 			}
 		}
-
 
 		// Try to find id gender by typem
 		foreach ( $data as $key => $elem ) {
@@ -165,13 +163,12 @@ final class Contact implements B24Object
 
 			$params["id"] = $userId;
  			$response = $this->connector->buildQuery ( $params, $this->update );
-
 		} else {
 			$response = $this->connector->buildQuery ( $params, $this->add );
 			$userId = $response['result'];
 		}
 
-		return $response['result'];
+		return $userId;
 
 	}
 
