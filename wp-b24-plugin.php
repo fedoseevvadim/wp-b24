@@ -382,7 +382,6 @@ function wpcf7_submit ( $result )
 
 			}
 
-
 			$contactID = $b24Contact->set ( $arrData );
 
 		}

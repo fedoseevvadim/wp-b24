@@ -151,7 +151,7 @@ final class Contact implements B24Object
 				if ( strtolower($elem[1]) === $elemName ) {
 
 					$data[$elem[0]] = 1;
-					continue;
+					break;
 				}
 
 			}
