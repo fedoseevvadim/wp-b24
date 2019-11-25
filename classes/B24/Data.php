@@ -13,7 +13,7 @@ class Data
 	 *
 	 * @return $response
 	 */
-	function getPaymentID ( $paymentMethod, $arrUserFields ): array
+	function getPaymentID ( $paymentMethod, $arrUserFields )
 	{
 
 		$ID = 0;
@@ -24,14 +24,17 @@ class Data
 
 				foreach ( $field["LIST"] as $list ) {
 
-					$value = strtolower ( $list["VALUE"] );
-					$pos = strpos ( $value, $paymentMethod );
+					if ( $list["VALUE"] ) {
 
-					if ( $pos !== false ) {
+						$value = strtolower ( $list["VALUE"] );
+						$pos = strpos ( $value, $paymentMethod );
 
-						return [ $field["FIELD_NAME"], $list["ID"] ];
+						if ( $pos !== false ) {
+
+							return [ $field["FIELD_NAME"], $list["ID"] ];
+						}
+
 					}
-
 				}
 
 			}

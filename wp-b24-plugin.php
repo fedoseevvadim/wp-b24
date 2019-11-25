@@ -185,7 +185,7 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 					$arrUser = get_user_meta ( $id );
 
 					// Before we start, let's check connection to server
-					$bCheckConnection = $B24->checkConnection ( $arrOptions["host"] . WPForm::PREFIX);
+					$bCheckConnection = $B24->checkConnection ( $arrOptions["host" . WPForm::PREFIX ] );
 					$parser->setOrder ( $ORDER[$i] );
 					$parser->setPostOrder ( $arrPOST_ORDER );
 					$parser->setTerms ( $arrORDER_TERMS );
@@ -210,7 +210,7 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 						$arrData["CONTACT_ID"] = $contactID;
 						$arrData["TITLE"] = $arrOptions["deal_name" . WPForm::PREFIX] . " #" . $ORDER[$i]->order_id . $title;
 
-						$paymentMethod = strtolower ( $arrPOST_ORDER["_payment_method"][0] );
+						$paymentMethod = strtolower ( $arrPOST_ORDER["_payment_method_title"][0] );
 
 						$arrData = $parser->parseFields (
 							$arrOptions["field_link" . WPForm::PREFIX ],
@@ -349,7 +349,7 @@ function wpcf7_submit ( $result )
 
 			$b24Contact = new \B24\Contact( $B24 );
 
-			// map fileds
+			// map fields
 			if ( $keyName !== false ) {
 				$arrData["first_name"][0] = $arrPost[$arrKeys[$keyName]];
 			}
@@ -376,9 +376,4 @@ function wpcf7_submit ( $result )
 	}
 
 	//}
-
-
 }
-
-?>
-

@@ -11,6 +11,7 @@ final class Contact implements B24Object
 
 	public $list = "crm.contact.list.json";
 	public $add = "crm.contact.add.json";
+	public $update = "crm.contact.update";
 	public $uf = "crm.contact.userfield.list";
 
 	const STATUS_ID = "NEW";
@@ -77,14 +78,20 @@ final class Contact implements B24Object
 	 *
 	 * @return $response
 	 */
-	public function set ( array $data ): int
+	public function set ( array $data )
 	{
 
 		if ( empty ( $data ) ) {
 			throw new \InvalidArgumentException( 'Data is empty' );
 		}
 
-		$data = \B24\Struct::removeNestedArray ( $data );
+		$parser = new \Parser\Settings ();
+		$uf = $this->getUF ();
+		$userId = 0;
+
+		$data = \B24\Struct::removeNestedArray ( $data ); // remove data like this $data["contact"][0] convert it to $data["contact"]
+		$parser->setUser ( $data );
+		$data = $parser->parseFields ( $data["contact"], $data );
 
 		$result = $this->get ( $data['billing_email'] );
 
@@ -92,16 +99,9 @@ final class Contact implements B24Object
 
 			$userId = (int)$result[0]["ID"];
 
-			return $userId;
 		}
 
 		// Or add contact
-		$parser = new \Parser\Settings ();
-
-		$uf = $this->getUF ();
-		$parser->setUser ( $data );
-		$data = $parser->parseFields ( $data["contact"], $data );
-
 		foreach ( self::$arrContactFields as $key => $item ) {
 
 			$params["fields"][$item[1]] = $data[$item[0]];
@@ -135,19 +135,46 @@ final class Contact implements B24Object
 					$data[$key] = self::$arrGenderRU[1];
 				}
 			}
-
 		}
 
 		$params = $this->map ( $uf, $data, $params );
 
 		$params["auth"] = $this->connector->accessToken;
 
-		$response = $this->connector->buildQuery ( $params, $this->add );
+		if ( $userId > 0 ) {
+
+			$params["id"] = $userId;
+ 			$response = $this->connector->buildQuery ( $params, $this->update );
+
+		} else {
+			$response = $this->connector->buildQuery ( $params, $this->add );
+			$userId = $response['result'];
+		}
 
 		return $response['result'];
 
 	}
 
+//	/**
+//	 * update - update contact user fields in B24
+//	 *
+//	 */
+//	public function update ( int $id, array $params )
+//	{
+//		if ( empty ( $id ) ) {
+//			throw new \InvalidArgumentException( 'ID must me set' );
+//		}
+//
+//		if ( empty ( $params ) ) {
+//			throw new \InvalidArgumentException( 'Params must me set' );
+//		}
+//
+//		$params["auth"] = $this->connector->accessToken;
+//
+//		$response = $this->connector->buildQuery ( $params, $this->update );
+//
+//		return $response['result'];
+//	}
 
 	/**
 	 * getUF - get contact user fields from B24
