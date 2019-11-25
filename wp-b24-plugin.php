@@ -267,12 +267,15 @@ function b24_toplevel_page ()
 
 function array_search_partial ( array $arr, string $keyword ): int
 {
+	$index = 0;
 
 	foreach ( $arr as $index => $string ) {
 
 		if ( strpos ( $string, $keyword ) !== false )
-			return $index;
+			break;
 	}
+
+	return $index;
 
 }
 
@@ -335,6 +338,7 @@ function wpcf7_submit ( $result )
 			$keyName = array_search_partial ( $arrKeys, "name" );
 			$keyEmail = array_search_partial ( $arrKeys, "email" );
 			$keyMenu = array_search_partial ( $arrKeys, "menu" );
+			$keyChk = array_search_partial ( $arrKeys, "checkbox" );
 
 			$b24Form = new WPForm();
 			$arrOptions = $b24Form->getOptions ();
@@ -369,6 +373,16 @@ function wpcf7_submit ( $result )
 			}
 
 			$arrData["contact"] = $arrOptions["contact_create" . WPForm::PREFIX ];
+
+			if ( $keyChk !== false ) {
+
+				$arrCheckBox = $arrPost[$arrKeys[$keyChk]];
+
+				$arrData["checkbox"][0] = $arrCheckBox;
+
+			}
+
+
 			$contactID = $b24Contact->set ( $arrData );
 
 		}

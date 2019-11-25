@@ -123,6 +123,41 @@ final class Contact implements B24Object
 			]
 		];
 
+		// Working with checkboxes from WEB FORM
+		//
+		// get settings
+		$arrLines = explode (
+			\Parser\Struct::DELIMETER_FOR_LINES,
+			$data["contact"]
+		);
+
+		foreach ( $arrLines as $line ) {
+
+			$arrOptionsElem[] = explode (
+				\Parser\Struct::DELIMETER,
+				$line
+			);
+
+		}
+
+		foreach ( $data["checkbox"] as $chk ) {
+
+			$elemName = strtolower ($chk);
+			$elemName = str_replace ("«", "", $elemName);
+			$elemName = str_replace ("»", "", $elemName);
+
+			foreach ( $arrOptionsElem as $elem ) {
+
+				if ( strtolower($elem[1]) === $elemName ) {
+
+					$data[$elem[0]] = 1;
+					continue;
+				}
+
+			}
+
+		}
+
 
 		// Try to find id gender by typem
 		foreach ( $data as $key => $elem ) {
