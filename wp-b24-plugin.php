@@ -174,21 +174,37 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 				$arrPOST_TERMS = wp_get_object_terms ( $product_id, 'product_cat' );
 
 				$arrPOST_ORDER["_quantity"][0] = $item->get_quantity ();
-				$arrPOST_ORDER["_total"][0] = $item->get_subtotal ();
+				$arrPOST_ORDER["_total"][0] = $item->get_total ();
 				$arrPOST_ORDER["_comments"][0] = \WC\Order::rsp_get_wc_order_notes ( $order_id );
 
 				$categoryId = $B24Terms->getTerm ( $arrPOST_TERMS[0]->term_id );
 
 				if ( is_array ( $arrPOST_ORDER ) AND is_array ( $ORDER ) ) {
 
-					$id = $arrPOST_ORDER["_customer_user"][0];
-					$arrUser = get_user_meta ( $id );
+					// user data
+					$userId = $arrPOST_ORDER["_customer_user"][0];
+					$userCountry = $arrPOST_ORDER["_billing_country"][0];
+					$arrUser = get_user_meta ( $userId );
+
+					//$customer = new WC_Customer($userId);
+
+					// let's find country
+					$WC_Countries = new WC_Countries();
+					$var = $WC_Countries->get_formatted_address( [] );
+
+					//$countries = $WC_Countries->countries;
+
+					//$country = array_ ($userCountry, $WC_Countries->countries);
+
+					$arrUser["billing_country"][0] = $WC_Countries->countries[$userCountry];
+
 
 					// Before we start, let's check connection to server
 					$bCheckConnection = $B24->checkConnection ( $arrOptions["host" . WPForm::PREFIX ] );
 					$parser->setOrder ( $ORDER[$i] );
 					$parser->setPostOrder ( $arrPOST_ORDER );
 					$parser->setTerms ( $arrORDER_TERMS );
+
 
 					if ( $B24->accessToken ) {
 						$arrUser["contact"] = $arrOptions["contact" . WPForm::PREFIX];
