@@ -13,6 +13,7 @@ final class Contact implements B24Object
 	public $add = "crm.contact.add.json";
 	public $update = "crm.contact.update";
 	public $uf = "crm.contact.userfield.list";
+	public $valueType = "HOME";
 
 	const STATUS_ID = "NEW";
 
@@ -97,7 +98,7 @@ final class Contact implements B24Object
 
 		if ( is_array ( $result ) AND count ( $result ) > 0 ) {
 
-			$userId = (int)$result[0]["ID"];
+			$userId = (int) $result[0]["ID"];
 
 		}
 
@@ -112,14 +113,14 @@ final class Contact implements B24Object
 		$params["fields"]['PHONE'] = [
 			[
 				"VALUE"      => $data['billing_phone'],
-				"VALUE_TYPE" => "WORK"
+				"VALUE_TYPE" => $this->valueType
 			]
 		];
 
 		$params["fields"]['EMAIL'] = [
 			[
 				"VALUE"      => $data['billing_email'],
-				"VALUE_TYPE" => "WORK"
+				"VALUE_TYPE" => $this->valueType
 			]
 		];
 
@@ -162,7 +163,10 @@ final class Contact implements B24Object
 		if ( $userId > 0 ) {
 
 			$params["id"] = $userId;
- 			$response = $this->connector->buildQuery ( $params, $this->update );
+			// while updating contact, SOURCE_ID should not be changed
+			unset($params["fields"]["SOURCE_ID"]);
+
+			$response = $this->connector->buildQuery ( $params, $this->update );
 		} else {
 			$response = $this->connector->buildQuery ( $params, $this->add );
 			$userId = $response['result'];
