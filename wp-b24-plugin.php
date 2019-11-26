@@ -323,8 +323,6 @@ function wpcf7_submit ( $result )
 	//$status     = 'mail_sent';
 	$arrData = [];
 
-	//if ( $result["status"] === $status ) {
-
 	if ( isset ( $GLOBALS["_POST"] ) ) {
 
 		$arrPost = (array)$GLOBALS["_POST"];
@@ -372,7 +370,15 @@ function wpcf7_submit ( $result )
 
 			}
 
-			$arrData["contact"] = $arrOptions["contact_create" . WPForm::PREFIX ];
+			// get fields by form id
+			$forms = new \Parser\Form($arrOptions["contact_create" . WPForm::PREFIX ]);
+
+			if ( is_array ($forms->arrForms) ) {
+
+				$arrData["contact"] = $forms->arrForms[$arrPost[$prefix]];
+
+				//$arrData["contact"] = $arrOptions["contact_create" . WPForm::PREFIX ];
+			}
 
 			if ( $keyChk !== false ) {
 
@@ -388,5 +394,4 @@ function wpcf7_submit ( $result )
 
 	}
 
-	//}
 }
