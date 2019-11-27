@@ -86,15 +86,24 @@ final class Contact implements B24Object
 			throw new \InvalidArgumentException( 'Data is empty' );
 		}
 
-		$parser = new \Parser\Settings ();
-		$uf = $this->getUF ();
-		$userId = 0;
+		try {
 
-		$data = \B24\Struct::removeNestedArray ( $data ); // remove data like this $data["contact"][0] convert it to $data["contact"]
-		$parser->setUser ( $data );
-		$data = $parser->parseFields ( $data["contact"], $data );
+			$parser = new \Parser\Settings ();
+			$uf = $this->getUF ();
+			$userId = 0;
 
-		$result = $this->get ( $data['billing_email'] );
+			$data = \B24\Struct::removeNestedArray ( $data ); // remove data like this $data["contact"][0] convert it to $data["contact"]
+			$parser->setUser ( $data );
+			$data = $parser->parseFields ( $data["contact"], $data );
+
+			$result = $this->get ( $data['billing_email'] );
+
+
+		} catch ( \Exception $e ) {
+
+			echo 'Caught exeption: ' . $e->getMessage ();
+		}
+
 
 		if ( is_array ( $result ) AND count ( $result ) > 0 ) {
 
@@ -102,75 +111,98 @@ final class Contact implements B24Object
 
 		}
 
-		// Or add contact
-		foreach ( self::$arrContactFields as $key => $item ) {
 
-			$params["fields"][$item[1]] = $data[$item[0]];
+		try {
 
+			// Or add contact
+			foreach ( self::$arrContactFields as $key => $item ) {
+
+				$params["fields"][$item[1]] = $data[$item[0]];
+
+			}
+
+			$params["fields"]['STATUS_ID'] = self::STATUS_ID;
+			$params["fields"]['PHONE'] = [
+				[
+					"VALUE"      => $data['billing_phone'],
+					"VALUE_TYPE" => $this->valueType
+				]
+			];
+
+			$params["fields"]['EMAIL'] = [
+				[
+					"VALUE"      => $data['billing_email'],
+					"VALUE_TYPE" => $this->valueType
+				]
+			];
+
+		} catch ( \Exception $e ) {
+
+			echo 'Caught exeption: ' . $e->getMessage ();
 		}
 
-		$params["fields"]['STATUS_ID'] = self::STATUS_ID;
-		$params["fields"]['PHONE'] = [
-			[
-				"VALUE"      => $data['billing_phone'],
-				"VALUE_TYPE" => $this->valueType
-			]
-		];
-
-		$params["fields"]['EMAIL'] = [
-			[
-				"VALUE"      => $data['billing_email'],
-				"VALUE_TYPE" => $this->valueType
-			]
-		];
 
 		// Working with checkboxes from WEB FORM
 
-		foreach ( $data["checkbox"] as $chk ) {
+		if (is_array ($data["checkbox"]) ) {
+
+			foreach ( $data["checkbox"] as $chk ) {
 
 //			$chk = str_replace ("«", "", $chk);
 //			$chk = str_replace ("»", "", $chk);
 
-			// try to find by field name
-			foreach ( $uf as $field ) {
+				// try to find by field name
+				foreach ( $uf as $field ) {
 
-				$chkName = $field["SETTINGS"]["LABEL_CHECKBOX"];
-				$key = $field["FIELD_NAME"];
+					$chkName = $field["SETTINGS"]["LABEL_CHECKBOX"];
+					$key = $field["FIELD_NAME"];
 
-				if ( $chk === $chkName ) {
-					$data[$key] = 1;
+					if ( $chk === $chkName ) {
+						$data[$key] = 1;
+					}
 				}
 			}
 		}
 
-		// Try to find id gender by typem
-		foreach ( $data as $key => $elem ) {
 
-			if ( $elem === "typem" ) {
 
-				if ( $data["typem"] === "men" ) {
-					$data[$key] = self::$arrGenderRU[0];
-				} else {
-					$data[$key] = self::$arrGenderRU[1];
+		try {
+
+			// Try to find id gender by typem
+			foreach ( $data as $key => $elem ) {
+
+				if ( $elem === "typem" ) {
+
+					if ( $data["typem"] === "men" ) {
+						$data[$key] = self::$arrGenderRU[0];
+					} else {
+						$data[$key] = self::$arrGenderRU[1];
+					}
 				}
 			}
+
+			$params = $this->map ( $uf, $data, $params );
+
+			$params["auth"] = $this->connector->accessToken;
+
+			if ( $userId > 0 ) {
+
+				$params["id"] = $userId;
+				// while updating contact, SOURCE_ID should not be changed
+				unset($params["fields"]["SOURCE_ID"]);
+
+				$response = $this->connector->buildQuery ( $params, $this->update );
+			} else {
+				$response = $this->connector->buildQuery ( $params, $this->add );
+				$userId = $response['result'];
+			}
+
+		} catch ( \Exception $e ) {
+
+			echo 'Caught exeption: ' . $e->getMessage ();
 		}
 
-		$params = $this->map ( $uf, $data, $params );
 
-		$params["auth"] = $this->connector->accessToken;
-
-		if ( $userId > 0 ) {
-
-			$params["id"] = $userId;
-			// while updating contact, SOURCE_ID should not be changed
-			unset($params["fields"]["SOURCE_ID"]);
-
-			$response = $this->connector->buildQuery ( $params, $this->update );
-		} else {
-			$response = $this->connector->buildQuery ( $params, $this->add );
-			$userId = $response['result'];
-		}
 
 		return $userId;
 
