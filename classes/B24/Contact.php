@@ -13,7 +13,8 @@ final class Contact implements B24Object
 	public $add = "crm.contact.add.json";
 	public $update = "crm.contact.update";
 	public $uf = "crm.contact.userfield.list";
-	public $valueType = "HOME";
+	public $mobileType = "MOBILE";
+	public $emailType = "HOME";
 
 	const STATUS_ID = "NEW";
 
@@ -107,7 +108,7 @@ final class Contact implements B24Object
 
 		if ( is_array ( $result ) AND count ( $result ) > 0 ) {
 
-			$userId = (int) $result[0]["ID"];
+			$userId = (int)$result[0]["ID"];
 
 		}
 
@@ -125,14 +126,14 @@ final class Contact implements B24Object
 			$params["fields"]['PHONE'] = [
 				[
 					"VALUE"      => $data['billing_phone'],
-					"VALUE_TYPE" => $this->valueType
+					"VALUE_TYPE" => $this->mobileType
 				]
 			];
 
 			$params["fields"]['EMAIL'] = [
 				[
 					"VALUE"      => $data['billing_email'],
-					"VALUE_TYPE" => $this->valueType
+					"VALUE_TYPE" => $this->emailType
 				]
 			];
 
@@ -144,12 +145,9 @@ final class Contact implements B24Object
 
 		// Working with checkboxes from WEB FORM
 
-		if (is_array ($data["checkbox"]) ) {
+		if ( is_array ( $data["checkbox"] ) ) {
 
 			foreach ( $data["checkbox"] as $chk ) {
-
-//			$chk = str_replace ("«", "", $chk);
-//			$chk = str_replace ("»", "", $chk);
 
 				// try to find by field name
 				foreach ( $uf as $field ) {
@@ -159,11 +157,33 @@ final class Contact implements B24Object
 
 					if ( $chk === $chkName ) {
 						$data[$key] = 1;
+						break;
 					}
 				}
 			}
 		}
 
+		if ( is_array ( $data["raw_checkbox"] ) ) {
+
+			foreach ( $data["raw_checkbox"] as $chk ) {
+
+				// try to find by field name
+				foreach ( $uf as $field ) {
+
+					$chkName = $field["SETTINGS"]["LABEL_CHECKBOX"];
+					$key = $field["FIELD_NAME"];
+
+					if ( $chk === $chkName ) {
+
+						if ( $data[$key] !== 1 ) {
+							unset ( $data[$key] );
+							break;
+						}
+					}
+				}
+
+			}
+		}
 
 
 		try {
@@ -189,7 +209,7 @@ final class Contact implements B24Object
 
 				$params["id"] = $userId;
 				// while updating contact, SOURCE_ID should not be changed
-				unset($params["fields"]["SOURCE_ID"]);
+				unset( $params["fields"]["SOURCE_ID"] );
 
 				$response = $this->connector->buildQuery ( $params, $this->update );
 			} else {
@@ -201,7 +221,6 @@ final class Contact implements B24Object
 
 			echo 'Caught exeption: ' . $e->getMessage ();
 		}
-
 
 
 		return $userId;

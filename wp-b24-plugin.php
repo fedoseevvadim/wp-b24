@@ -40,7 +40,7 @@ class B24Plugin
 
 		add_action ( 'woocommerce_order_status_completed', 'b24_createLeadWhenCompleted' ); // Хук статуса заказа = "Выполнен"
 
-		//add_action ( 'wpcf7_submit', 'wpcf7_submit', 10, 2 );
+		add_action ( 'wpcf7_submit', 'wpcf7_submit', 10, 2 );
 
 		//add_action ( "wpcf7_before_send_mail", "wpcf7_do_something_else" );
 
@@ -289,6 +289,7 @@ function array_search_partial ( array $arr, string $keyword ): int
 			break;
 	}
 
+
 	return $index;
 
 }
@@ -303,7 +304,7 @@ function add_contact_b24 ( $user_id )
 
 		$arrOptions = $b24Form->getOptions ();
 
-		if ( (int) $arrOptions["reg_user" . WPForm::PREFIX] === 1 ) {
+		if ( (int)$arrOptions["reg_user" . WPForm::PREFIX] === 1 ) {
 
 			$B24 = new \B24\Connector (
 				$arrOptions["host" . WPForm::PREFIX],
@@ -321,7 +322,6 @@ function add_contact_b24 ( $user_id )
 
 			$arrUser["first_name"][0] = filter_input ( INPUT_POST, 'first_name' );
 			$arrUser["last_name"][0] = filter_input ( INPUT_POST, 'last_name' );
-			//$arrUser["billing_email"][0]    =  filter_input (INPUT_POST, 'billing_email');
 			$arrUser["typem"][0] = filter_input ( INPUT_POST, 'typem' );
 			$arrUser["billing_phone"][0] = filter_input ( INPUT_POST, 'phone' );
 
@@ -363,6 +363,39 @@ function wpcf7_submit ( $result )
 			$keyEmail = array_search_partial ( $arrKeys, "email" );
 			$keyMenu = array_search_partial ( $arrKeys, "menu" );
 			$keyChk = array_search_partial ( $arrKeys, "checkbox" );
+
+			// try to search elem checkboxes
+			// Да потому что хер знает как их достать
+			$arrObj = (array)$result;
+			$arrCheckboxes = [];
+			//$arrCheckboxes = (array)$arrObj["WPCF7_ContactFormscanned_form_tags"];
+
+			foreach ( $arrObj as $key => $elem ) {
+
+				if ( is_array ( $elem ) ) {
+
+					$pos = strpos ( $key, "_form_tags" );
+
+					if ( $pos !== false ) {
+						$arrCheckboxes = $elem;
+						break;
+					}
+
+				}
+			}
+
+			if ( is_array ( $arrCheckboxes ) ) {
+
+				foreach ( $arrCheckboxes as $key => $elem ) {
+					$type = $elem->type;
+
+					if ( $type === "checkbox*" ) {
+						$arrRawValues = $elem->raw_values;
+						break;
+					}
+				}
+			}
+
 
 			$b24Form = new WPForm();
 			$arrOptions = $b24Form->getOptions ();
@@ -412,6 +445,10 @@ function wpcf7_submit ( $result )
 
 				$arrData["checkbox"][0] = $arrCheckBox;
 
+			}
+
+			if ( is_array ( $arrRawValues ) ) {
+				$arrData["raw_checkbox"][0] = $arrRawValues;
 			}
 
 			$contactID = $b24Contact->set ( $arrData );
