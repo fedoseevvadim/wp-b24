@@ -163,6 +163,15 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 			$iTitle = 1;
 			$i = 0;
 
+			// removing coupon
+			foreach ( $ORDER as $key => $orderItem ) {
+
+				if ( $orderItem->order_item_type === "coupon" ) {
+					unset ($ORDER[$key]);
+				}
+
+			}
+
 			foreach ( $ORDER as $orderItem ) {
 
 				$item = new WC_Order_Item_Product( $orderItem->order_item_id );
