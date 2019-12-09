@@ -32,15 +32,15 @@ class B24Plugin
 	function __construct ()
 	{
 
-		add_action('admin_menu', function()  {
-			global  $funcAddPage;
+		add_action ( 'admin_menu', function () {
+			global $funcAddPage;
 
 			add_menu_page ( 'Bitrix24', 'Bitrix24', 'manage_options', __FILE__, 'b24_toplevel_page' );
-		});
+		} );
 
-		add_action ( 'woocommerce_order_status_completed', 'b24_createLeadWhenCompleted' ); // Хук статуса заказа = "Выполнен"
+		//add_action ( 'woocommerce_order_status_completed', 'b24_createLeadWhenCompleted' ); // Хук статуса заказа = "Выполнен"
 
-		add_action ( 'wpcf7_submit', 'wpcf7_submit', 10, 2 );
+		add_action ( 'wpcf7_submit', 'wpcf7_submit', 10, 1 );
 
 		//add_action ( "wpcf7_before_send_mail", "wpcf7_do_something_else" );
 
@@ -109,8 +109,6 @@ if ( $http_post === true ) {
 }
 
 
-
-
 //${$funcAddPage} = function()  {
 //
 //	add_menu_page ( 'Bitrix24', 'Bitrix24', 'manage_options', __FILE__, 'b24_toplevel_page_ru' );
@@ -169,7 +167,7 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 
 				$item = new WC_Order_Item_Product( $orderItem->order_item_id );
 				$product_id = $item->get_product_id ();
-				$B24Terms = new \B24\Terms( $arrOptions["lead_terms" . WPForm::PREFIX ] );
+				$B24Terms = new \B24\Terms( $arrOptions["lead_terms" . WPForm::PREFIX] );
 				$arrORDER_TERMS = get_post_meta ( $product_id );
 				$arrPOST_TERMS = wp_get_object_terms ( $product_id, 'product_cat' );
 
@@ -190,7 +188,7 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 
 					// let's find country
 					$WC_Countries = new WC_Countries();
-					$var = $WC_Countries->get_formatted_address( [] );
+					$var = $WC_Countries->get_formatted_address ( [] );
 
 					//$countries = $WC_Countries->countries;
 
@@ -200,7 +198,7 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 
 
 					// Before we start, let's check connection to server
-					$bCheckConnection = $B24->checkConnection ( $arrOptions["host" . WPForm::PREFIX ] );
+					$bCheckConnection = $B24->checkConnection ( $arrOptions["host" . WPForm::PREFIX] );
 					$parser->setOrder ( $ORDER[$i] );
 					$parser->setPostOrder ( $arrPOST_ORDER );
 					$parser->setTerms ( $arrORDER_TERMS );
@@ -229,7 +227,7 @@ function b24_createLeadWhenCompleted ( $order_id, $debug = '' )
 						$paymentMethod = strtolower ( $arrPOST_ORDER["_payment_method_title"][0] );
 
 						$arrData = $parser->parseFields (
-							$arrOptions["field_link" . WPForm::PREFIX ],
+							$arrOptions["field_link" . WPForm::PREFIX],
 							$arrData
 						);
 
@@ -296,9 +294,10 @@ function array_search_partial ( array $arr, string $keyword ): int
 }
 
 
-
 function add_contact_b24 ( $user_id )
 {
+
+	//file_put_contents ($_SERVER["DOCUMENT_ROOT"]."/wp-content/plugins/b24-plugin/test.txt", "TEST");
 
 	if ( $user_id ) {
 
@@ -306,21 +305,34 @@ function add_contact_b24 ( $user_id )
 
 		$arrOptions = $b24Form->getOptions ();
 
-		if ( $arrOptions["reg_user" . WPForm::PREFIX ] === 1 ) {
+		if ( $arrOptions["reg_user" . WPForm::PREFIX] === 1 ) {
 
 			$B24 = new \B24\Connector (
-				$arrOptions["host" . WPForm::PREFIX ],
-				$arrOptions["login" . WPForm::PREFIX ],
-				$arrOptions["password" . WPForm::PREFIX ],
-				$arrOptions["client_id" . WPForm::PREFIX ],
-				$arrOptions["client_secret" . WPForm::PREFIX ]
+				$arrOptions["host" . WPForm::PREFIX],
+				$arrOptions["login" . WPForm::PREFIX],
+				$arrOptions["password" . WPForm::PREFIX],
+				$arrOptions["client_id" . WPForm::PREFIX],
+				$arrOptions["client_secret" . WPForm::PREFIX]
 			);
 
 			$b24Contact = new \B24\Contact( $B24 );
 
 			$arrUser = get_user_meta ( $user_id );
 
+			$arrUserData = get_userdata ( $user_id );
+
+			$arrUser["first_name"][0] = filter_input ( INPUT_POST, 'first_name' );
+			$arrUser["last_name"][0] = filter_input ( INPUT_POST, 'last_name' );
+			//$arrUser["billing_email"][0]    =  filter_input (INPUT_POST, 'billing_email');
+			$arrUser["typem"][0] = filter_input ( INPUT_POST, 'typem' );
+			$arrUser["billing_phone"][0] = filter_input ( INPUT_POST, 'phone' );
+
+
 			if ( $B24->accessToken ) {
+
+				$arrUser['billing_email'] = $arrUserData->data->user_email;
+//				$arrUser["typem"] = $arrPOST_ORDER["typem"][0];
+				$arrUser["contact"] = $arrOptions["contact_create" . WPForm::PREFIX];
 
 				$contactID = $b24Contact->set ( $arrUser );
 
@@ -339,75 +351,117 @@ function wpcf7_submit ( $result )
 	//$status     = 'mail_sent';
 	$arrData = [];
 
-	if ( isset ( $GLOBALS["_POST"] ) ) {
+	$b24Form = new WPForm();
+	$arrOptions = $b24Form->getOptions ();
+	$contact_create = $arrOptions["contact_create" . WPForm::PREFIX];
+	$formID = $result->id;
+	$pos = strpos ( $contact_create, "FORM_ID=>".$formID );
 
-		$arrPost = (array)$GLOBALS["_POST"];
-		$arrKeys = array_keys ( $arrPost );
+	if ( $pos !== false ) {
 
-		$searchPrefix = array_search ( $prefix, $arrKeys );
+		if ( isset ( $GLOBALS["_POST"] ) ) {
 
-		if ( $searchPrefix !== false ) {
+			$arrPost = (array)$GLOBALS["_POST"];
+			$arrKeys = array_keys ( $arrPost );
 
-			// try to find in post results from submitted form
-			$keyName = array_search_partial ( $arrKeys, "name" );
-			$keyEmail = array_search_partial ( $arrKeys, "email" );
-			$keyMenu = array_search_partial ( $arrKeys, "menu" );
-			$keyChk = array_search_partial ( $arrKeys, "checkbox" );
+			$searchPrefix = array_search ( $prefix, $arrKeys );
 
-			$b24Form = new WPForm();
-			$arrOptions = $b24Form->getOptions ();
+			if ( $searchPrefix !== false ) {
 
-			$B24 = new \B24\Connector (
-				$arrOptions["host" . WPForm::PREFIX ],
-				$arrOptions["login" . WPForm::PREFIX],
-				$arrOptions["password" . WPForm::PREFIX],
-				$arrOptions["client_id" . WPForm::PREFIX ],
-				$arrOptions["client_secret" . WPForm::PREFIX ]
-			);
+				// try to find in post results from submitted form
+				$keyName = array_search_partial ( $arrKeys, "name" );
+				$keyEmail = array_search_partial ( $arrKeys, "email" );
+				$keyMenu = array_search_partial ( $arrKeys, "menu" );
+				$keyChk = array_search_partial ( $arrKeys, "checkbox" );
 
-			$b24Contact = new \B24\Contact( $B24 );
+				// try to search elem checkboxes
+				// Да потому что хер знает как их достать
+				$arrObj = (array)$result;
+				$arrCheckboxes = [];
+				//$arrCheckboxes = (array)$arrObj["WPCF7_ContactFormscanned_form_tags"];
 
-			// map fields
-			if ( $keyName !== false ) {
-				$arrData["first_name"][0] = $arrPost[$arrKeys[$keyName]];
-			}
+				foreach ( $arrObj as $key => $elem ) {
 
-			if ( $keyEmail !== false ) {
-				$arrData['billing_email'][0] = $arrPost[$arrKeys[$keyEmail]];
-			}
+					if ( is_array ( $elem ) ) {
 
-			if ( $keyMenu !== false ) {
+						$pos = strpos ( $key, "_form_tags" );
 
-				$arrData["typem"][0] = "";
+						if ( $pos !== false ) {
+							$arrCheckboxes = $elem;
+							break;
+						}
 
-				if ( $arrPost[$arrKeys[$keyMenu]] === B24\Contact::$arrGenderRU[0] ) {
-					$arrData["typem"][0] = "men";
+					}
 				}
 
+				if ( is_array ( $arrCheckboxes ) ) {
+
+					foreach ( $arrCheckboxes as $key => $elem ) {
+						$type = $elem->type;
+
+						if ( $type === "checkbox*" ) {
+							$arrRawValues = $elem->raw_values;
+							break;
+						}
+					}
+				}
+
+
+				$B24 = new \B24\Connector (
+					$arrOptions["host" . WPForm::PREFIX],
+					$arrOptions["login" . WPForm::PREFIX],
+					$arrOptions["password" . WPForm::PREFIX],
+					$arrOptions["client_id" . WPForm::PREFIX],
+					$arrOptions["client_secret" . WPForm::PREFIX]
+				);
+
+				$b24Contact = new \B24\Contact( $B24 );
+
+				// map fields
+				if ( $keyName !== false ) {
+					$arrData["first_name"][0] = $arrPost[$arrKeys[$keyName]];
+				}
+
+				if ( $keyEmail !== false ) {
+					$arrData['billing_email'][0] = $arrPost[$arrKeys[$keyEmail]];
+				}
+
+				if ( $keyMenu !== false ) {
+
+					$arrData["typem"][0] = "";
+
+					if ( $arrPost[$arrKeys[$keyMenu]] === B24\Contact::$arrGenderRU[0] ) {
+						$arrData["typem"][0] = "men";
+					}
+
+				}
+
+				// get fields by form id
+				$forms = new \Parser\Form( $arrOptions["contact_create" . WPForm::PREFIX] );
+
+				if ( is_array ( $forms->arrForms ) ) {
+
+					$arrData["contact"] = $forms->arrForms[$arrPost[$prefix]];
+
+					//$arrData["contact"] = $arrOptions["contact_create" . WPForm::PREFIX ];
+				}
+
+				if ( $keyChk !== false ) {
+
+					$arrCheckBox = $arrPost[$arrKeys[$keyChk]];
+
+					$arrData["checkbox"][0] = $arrCheckBox;
+
+				}
+
+				if ( is_array ( $arrRawValues ) ) {
+					$arrData["raw_checkbox"][0] = $arrRawValues;
+				}
+
+				$contactID = $b24Contact->set ( $arrData );
+
 			}
-
-			// get fields by form id
-			$forms = new \Parser\Form($arrOptions["contact_create" . WPForm::PREFIX ]);
-
-			if ( is_array ($forms->arrForms) ) {
-
-				$arrData["contact"] = $forms->arrForms[$arrPost[$prefix]];
-
-				//$arrData["contact"] = $arrOptions["contact_create" . WPForm::PREFIX ];
-			}
-
-			if ( $keyChk !== false ) {
-
-				$arrCheckBox = $arrPost[$arrKeys[$keyChk]];
-
-				$arrData["checkbox"][0] = $arrCheckBox;
-
-			}
-
-			$contactID = $b24Contact->set ( $arrData );
 
 		}
-
 	}
-
 }

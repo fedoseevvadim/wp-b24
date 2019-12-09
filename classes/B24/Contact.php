@@ -166,6 +166,9 @@ final class Contact implements B24Object
 			// while updating contact, SOURCE_ID should not be changed
 			unset($params["fields"]["SOURCE_ID"]);
 
+			// while updating contact, NAME should not be changed
+			$params["fields"]["NAME"] = $result['result']["NAME"];
+
 			$response = $this->connector->buildQuery ( $params, $this->update );
 		} else {
 			$response = $this->connector->buildQuery ( $params, $this->add );
